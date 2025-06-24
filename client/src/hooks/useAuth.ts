@@ -28,7 +28,8 @@ export function useAuth() {
           return null;
         }
         if (!res.ok) {
-          throw new Error(`${res.status}: ${res.statusText}`);
+          const errorData = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(errorData.message || res.statusText);
         }
         return await res.json();
       } catch (error) {
