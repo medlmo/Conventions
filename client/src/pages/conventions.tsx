@@ -1,22 +1,30 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { Convention } from "@shared/schema";
+import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ConventionForm } from "@/components/convention-form";
 import { DeleteConfirmation } from "@/components/delete-confirmation";
+import { UserManagement } from "@/components/user-management";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "@/lib/utils";
-import { File, Plus, Download, Search, Eye, Edit, Trash2, Bell } from "lucide-react";
+import { getRoleDisplayName } from "@/lib/authUtils";
+import { File, Plus, Download, Search, Eye, Edit, Trash2, Bell, LogOut, Users, Settings } from "lucide-react";
 
 export default function ConventionsPage() {
+  const { user, logout } = useAuth();
+  const permissions = usePermissions();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("conventions");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editingConvention, setEditingConvention] = useState<Convention | null>(null);
@@ -75,19 +83,61 @@ export default function ConventionsPage() {
     return matchesSearch && matchesStatus && matchesDateRange;
   });
 
+
+
+  const handleAddNew = () => {
+    if (!permissions.canCreateConvention) {
+      toast({
+        title: "غير مصرح",
+        description: "ليس لديك صلاحية لإضافة اتفاقيات جديدة",
+        variant: "destructive",
+      });
+      return;
+    }
+    setEditingConvention(null);
+    setIsFormOpen(true);
+  };
+
   const handleEdit = (convention: Convention) => {
+    if (!permissions.canEditConvention) {
+      toast({
+        title: "غير مصرح",
+        description: "ليس لديك صلاحية لتعديل الاتفاقيات",
+        variant: "destructive",
+      });
+      return;
+    }
     setEditingConvention(convention);
     setIsFormOpen(true);
   };
 
   const handleDelete = (id: number) => {
+    if (!permissions.canDeleteConvention) {
+      toast({
+        title: "غير مصرح",
+        description: "ليس لديك صلاحية لحذف الاتفاقيات",
+        variant: "destructive",
+      });
+      return;
+    }
     setDeletingId(id);
     setIsDeleteOpen(true);
   };
 
-  const handleAddNew = () => {
-    setEditingConvention(null);
-    setIsFormOpen(true);
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "تم تسجيل الخروج بنجاح",
+        description: "نراك قريباً",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تسجيل الخروج",
+        variant: "destructive",
+      });
+    }
   };
 
   const exportToExcel = () => {
@@ -124,9 +174,23 @@ export default function ConventionsPage() {
                 <Bell className="h-5 w-5" />
               </Button>
               <div className="flex items-center space-x-reverse space-x-2">
-                <div className="h-8 w-8 rounded-full bg-gray-300"></div>
-                <span className="text-sm font-medium text-gray-700">أحمد محمد</span>
+                <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium">
+                  {user?.username?.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-700">
+                    {user?.firstName && user?.lastName 
+                      ? `${user.firstName} ${user.lastName}`
+                      : user?.username}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {getRoleDisplayName(user?.role || "")}
+                  </span>
+                </div>
               </div>
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </div>
@@ -144,25 +208,47 @@ export default function ConventionsPage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-cairo font-bold text-gray-900 mb-2">إدارة الاتفاقيات</h2>
-              <p className="text-gray-600">إدارة وتتبع جميع الاتفاقيات والعقود في النظام</p>
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3">
+            <TabsTrigger value="conventions" className="flex items-center gap-2">
+              <File className="h-4 w-4" />
+              الاتفاقيات
+            </TabsTrigger>
+            {permissions.canManageUsers && (
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                إدارة المستخدمين
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              الإعدادات
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="conventions" className="space-y-6">
+            {/* Page Header */}
+            <div className="mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-2xl font-cairo font-bold text-gray-900 mb-2">إدارة الاتفاقيات</h2>
+                  <p className="text-gray-600">إدارة وتتبع جميع الاتفاقيات والعقود في النظام</p>
+                </div>
+                <div className="mt-4 sm:mt-0 flex space-x-reverse space-x-3">
+                  {permissions.canCreateConvention && (
+                    <Button onClick={handleAddNew} className="bg-primary hover:bg-primary/90">
+                      <Plus className="ml-2 h-4 w-4" />
+                      إضافة اتفاقية جديدة
+                    </Button>
+                  )}
+                  <Button onClick={exportToExcel} variant="secondary" className="bg-green-600 hover:bg-green-700 text-white">
+                    <Download className="ml-2 h-4 w-4" />
+                    تصدير إلى Excel
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div className="mt-4 sm:mt-0 flex space-x-reverse space-x-3">
-              <Button onClick={handleAddNew} className="bg-primary hover:bg-primary/90">
-                <Plus className="ml-2 h-4 w-4" />
-                إضافة اتفاقية جديدة
-              </Button>
-              <Button onClick={exportToExcel} variant="secondary" className="bg-green-600 hover:bg-green-700 text-white">
-                <Download className="ml-2 h-4 w-4" />
-                تصدير إلى Excel
-              </Button>
-            </div>
-          </div>
-        </div>
 
         {/* Search and Filter Panel */}
         <Card className="mb-6">
@@ -348,12 +434,16 @@ export default function ConventionsPage() {
                               <Button variant="ghost" size="sm">
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(convention)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(convention.id)}>
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
+                              {permissions.canEditConvention && (
+                                <Button variant="ghost" size="sm" onClick={() => handleEdit(convention)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {permissions.canDeleteConvention && (
+                                <Button variant="ghost" size="sm" onClick={() => handleDelete(convention.id)}>
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -364,15 +454,54 @@ export default function ConventionsPage() {
               </div>
             )}
           </CardContent>
-        </Card>
+            </Card>
+          </TabsContent>
+
+          {permissions.canManageUsers && (
+            <TabsContent value="users">
+              <UserManagement />
+            </TabsContent>
+          )}
+
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-cairo">إعدادات النظام</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-4 border-b">
+                    <div>
+                      <h4 className="font-medium">معلومات المستخدم</h4>
+                      <p className="text-sm text-gray-600">اسم المستخدم: {user?.username}</p>
+                      <p className="text-sm text-gray-600">الدور: {getRoleDisplayName(user?.role || "")}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between py-4">
+                    <div>
+                      <h4 className="font-medium">تسجيل الخروج</h4>
+                      <p className="text-sm text-gray-600">إنهاء الجلسة الحالية</p>
+                    </div>
+                    <Button variant="destructive" onClick={handleLogout}>
+                      <LogOut className="ml-2 h-4 w-4" />
+                      تسجيل الخروج
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Modals */}
-      <ConventionForm
-        open={isFormOpen}
-        onOpenChange={setIsFormOpen}
-        convention={editingConvention}
-      />
+      {permissions.canCreateConvention && (
+        <ConventionForm
+          open={isFormOpen}
+          onOpenChange={setIsFormOpen}
+          convention={editingConvention}
+        />
+      )}
 
       <DeleteConfirmation
         open={isDeleteOpen}

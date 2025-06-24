@@ -1,15 +1,34 @@
-import { conventions, users, type Convention, type InsertConvention, type User, type InsertUser } from "@shared/schema";
+import {
+  users,
+  conventions,
+  type User,
+  type UpsertUser,
+  type Convention,
+  type InsertConvention,
+  type CreateUser,
+  UserRole,
+  type UserRoleType
+} from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
+// Interface for storage operations
 export interface IStorage {
-  // User methods
-  getUser(id: number): Promise<User | undefined>;
+  // User operations
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  createUser(user: CreateUser): Promise<User>;
+  updateUser(id: string, user: Partial<UpsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
+  getAllUsers(): Promise<User[]>;
+  validateUser(username: string, password: string): Promise<User | null>;
   
   // Convention methods
   getAllConventions(): Promise<Convention[]>;
   getConvention(id: number): Promise<Convention | undefined>;
-  createConvention(convention: InsertConvention): Promise<Convention>;
+  createConvention(convention: InsertConvention, createdBy: string): Promise<Convention>;
   updateConvention(id: number, convention: Partial<InsertConvention>): Promise<Convention | undefined>;
   deleteConvention(id: number): Promise<boolean>;
   searchConventions(query: string): Promise<Convention[]>;
@@ -17,127 +36,119 @@ export interface IStorage {
   getConventionsByDateRange(fromDate: string, toDate: string): Promise<Convention[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private conventions: Map<number, Convention>;
-  private currentUserId: number;
-  private currentConventionId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.conventions = new Map();
-    this.currentUserId = 1;
-    this.currentConventionId = 1;
-    this.seedData();
-  }
-
-  private seedData() {
-    // Add sample data based on the Excel screenshot
-    const sampleConventions = [
-      {
-        conventionNumber: "2024/001",
-        date: "2024-01-15",
-        description: "توريد وتركيب أجهزة حاسوب للإدارة العامة",
-        amount: "150000.00",
-        status: "نشطة",
-        operationType: "توريد",
-        contractor: "شركة التقنية المتقدمة"
-      },
-      {
-        conventionNumber: "2024/002", 
-        date: "2024-02-20",
-        description: "صيانة شبكة الحاسوب والخوادم",
-        amount: "85000.00",
-        status: "قيد التنفيذ",
-        operationType: "صيانة",
-        contractor: "مؤسسة الحلول التقنية"
-      },
-      {
-        conventionNumber: "2024/003",
-        date: "2024-03-10", 
-        description: "تطوير نظام إدارة الموارد البشرية",
-        amount: "250000.00",
-        status: "معلقة",
-        operationType: "تطوير",
-        contractor: "شركة البرمجيات الذكية"
-      }
-    ];
-
-    sampleConventions.forEach(conv => {
-      const id = this.currentConventionId++;
-      const now = new Date();
-      const convention: Convention = {
-        ...conv,
-        id,
-        createdAt: now,
-        updatedAt: now,
-      };
-      this.conventions.set(id, convention);
-    });
-  }
-
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  // Convention methods
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  async createUser(userData: CreateUser): Promise<User> {
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: userId,
+        username: userData.username,
+        password: hashedPassword,
+        role: userData.role,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        isActive: "true",
+      })
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...userData, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.createdAt);
+  }
+
+  async validateUser(username: string, password: string): Promise<User | null> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    if (!user || user.isActive !== "true") return null;
+    
+    const isValid = await bcrypt.compare(password, user.password);
+    return isValid ? user : null;
+  }
+
+  // Convention operations  
   async getAllConventions(): Promise<Convention[]> {
-    return Array.from(this.conventions.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return await db.select().from(conventions).orderBy(conventions.createdAt);
   }
 
   async getConvention(id: number): Promise<Convention | undefined> {
-    return this.conventions.get(id);
+    const [convention] = await db.select().from(conventions).where(eq(conventions.id, id));
+    return convention;
   }
 
-  async createConvention(insertConvention: InsertConvention): Promise<Convention> {
-    const id = this.currentConventionId++;
-    const now = new Date();
-    const convention: Convention = {
-      ...insertConvention,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.conventions.set(id, convention);
+  async createConvention(conventionData: InsertConvention, createdBy: string): Promise<Convention> {
+    const [convention] = await db
+      .insert(conventions)
+      .values({
+        ...conventionData,
+        createdBy,
+      })
+      .returning();
     return convention;
   }
 
   async updateConvention(id: number, updateData: Partial<InsertConvention>): Promise<Convention | undefined> {
-    const existing = this.conventions.get(id);
-    if (!existing) return undefined;
-
-    const updated: Convention = {
-      ...existing,
-      ...updateData,
-      updatedAt: new Date(),
-    };
-    this.conventions.set(id, updated);
-    return updated;
+    const [convention] = await db
+      .update(conventions)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(conventions.id, id))
+      .returning();
+    return convention;
   }
 
   async deleteConvention(id: number): Promise<boolean> {
-    return this.conventions.delete(id);
+    const result = await db.delete(conventions).where(eq(conventions.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async searchConventions(query: string): Promise<Convention[]> {
+    // This would need proper SQL search implementation
+    const allConventions = await this.getAllConventions();
     const lowerQuery = query.toLowerCase();
-    return Array.from(this.conventions.values()).filter(convention =>
+    return allConventions.filter(convention =>
       convention.conventionNumber.toLowerCase().includes(lowerQuery) ||
       convention.description.toLowerCase().includes(lowerQuery) ||
       convention.contractor.toLowerCase().includes(lowerQuery) ||
@@ -146,13 +157,13 @@ export class MemStorage implements IStorage {
   }
 
   async getConventionsByStatus(status: string): Promise<Convention[]> {
-    return Array.from(this.conventions.values()).filter(convention =>
-      convention.status === status
-    );
+    const allConventions = await this.getAllConventions();
+    return allConventions.filter(convention => convention.status === status);
   }
 
   async getConventionsByDateRange(fromDate: string, toDate: string): Promise<Convention[]> {
-    return Array.from(this.conventions.values()).filter(convention => {
+    const allConventions = await this.getAllConventions();
+    return allConventions.filter(convention => {
       const convDate = new Date(convention.date);
       const from = new Date(fromDate);
       const to = new Date(toDate);
@@ -161,4 +172,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

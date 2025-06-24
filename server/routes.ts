@@ -1,22 +1,152 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConventionSchema } from "@shared/schema";
+import { getSession, requireAuth, requireRole } from "./auth";
+import { 
+  insertConventionSchema, 
+  loginSchema, 
+  createUserSchema,
+  UserRole 
+} from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get all conventions
-  app.get("/api/conventions", async (req, res) => {
+  // Setup session middleware
+  app.use(getSession());
+
+  // Auth routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = loginSchema.parse(req.body);
+      const user = await storage.validateUser(username, password);
+      
+      if (!user) {
+        return res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+      }
+
+      req.session.userId = user.id;
+      req.session.user = user;
+      
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      console.error("Login error:", error);
+      res.status(500).json({ message: "خطأ في تسجيل الدخول" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "خطأ في تسجيل الخروج" });
+      }
+      res.json({ message: "تم تسجيل الخروج بنجاح" });
+    });
+  });
+
+  app.get("/api/auth/user", requireAuth, (req, res) => {
+    res.json({
+      user: {
+        id: req.user!.id,
+        username: req.user!.username,
+        role: req.user!.role,
+        firstName: req.user!.firstName,
+        lastName: req.user!.lastName,
+        email: req.user!.email,
+      }
+    });
+  });
+
+  // User management routes (Admin only)
+  app.get("/api/users", requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "خطأ في استرجاع المستخدمين" });
+    }
+  });
+
+  app.post("/api/users", requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      const userData = createUserSchema.parse(req.body);
+      const user = await storage.createUser(userData);
+      
+      res.status(201).json({
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        isActive: user.isActive,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "خطأ في إنشاء المستخدم" });
+    }
+  });
+
+  app.delete("/api/users/:id", requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Prevent admin from deleting themselves
+      if (id === req.user!.id) {
+        return res.status(400).json({ message: "لا يمكنك حذف حسابك الخاص" });
+      }
+      
+      const deleted = await storage.deleteUser(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "المستخدم غير موجود" });
+      }
+      
+      res.json({ message: "تم حذف المستخدم بنجاح" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "خطأ في حذف المستخدم" });
+    }
+  });
+
+  // Convention routes with role-based access
+  // Get all conventions - All authenticated users can view
+  app.get("/api/conventions", requireAuth, async (req, res) => {
     try {
       const conventions = await storage.getAllConventions();
       res.json(conventions);
     } catch (error) {
+      console.error("Error fetching conventions:", error);
       res.status(500).json({ message: "خطأ في استرجاع الاتفاقيات" });
     }
   });
 
-  // Get convention by ID
-  app.get("/api/conventions/:id", async (req, res) => {
+  // Get convention by ID - All authenticated users can view
+  app.get("/api/conventions/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const convention = await storage.getConvention(id);
@@ -25,26 +155,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(convention);
     } catch (error) {
+      console.error("Error fetching convention:", error);
       res.status(500).json({ message: "خطأ في استرجاع الاتفاقية" });
     }
   });
 
-  // Create new convention
-  app.post("/api/conventions", async (req, res) => {
+  // Create new convention - Admin and Editor only
+  app.post("/api/conventions", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), async (req, res) => {
     try {
       const validatedData = insertConventionSchema.parse(req.body);
-      const convention = await storage.createConvention(validatedData);
+      const convention = await storage.createConvention(validatedData, req.user!.id);
       res.status(201).json(convention);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
       }
+      console.error("Error creating convention:", error);
       res.status(500).json({ message: "خطأ في إنشاء الاتفاقية" });
     }
   });
 
-  // Update convention
-  app.put("/api/conventions/:id", async (req, res) => {
+  // Update convention - Admin and Editor only
+  app.put("/api/conventions/:id", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertConventionSchema.partial().parse(req.body);
@@ -57,12 +189,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
       }
+      console.error("Error updating convention:", error);
       res.status(500).json({ message: "خطأ في تحديث الاتفاقية" });
     }
   });
 
-  // Delete convention
-  app.delete("/api/conventions/:id", async (req, res) => {
+  // Delete convention - Admin and Editor only
+  app.delete("/api/conventions/:id", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteConvention(id);
@@ -71,23 +204,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ message: "تم حذف الاتفاقية بنجاح" });
     } catch (error) {
+      console.error("Error deleting convention:", error);
       res.status(500).json({ message: "خطأ في حذف الاتفاقية" });
     }
   });
 
-  // Search conventions
-  app.get("/api/conventions/search/:query", async (req, res) => {
+  // Search conventions - All authenticated users can search
+  app.get("/api/conventions/search/:query", requireAuth, async (req, res) => {
     try {
       const query = req.params.query;
       const conventions = await storage.searchConventions(query);
       res.json(conventions);
     } catch (error) {
+      console.error("Error searching conventions:", error);
       res.status(500).json({ message: "خطأ في البحث" });
     }
   });
 
-  // Get conventions statistics
-  app.get("/api/conventions/stats", async (req, res) => {
+  // Get conventions statistics - All authenticated users can view stats
+  app.get("/api/conventions/stats", requireAuth, async (req, res) => {
     try {
       const allConventions = await storage.getAllConventions();
       const total = allConventions.length;
@@ -102,6 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalValue: totalValue.toLocaleString('ar-SA', { style: 'currency', currency: 'SAR' })
       });
     } catch (error) {
+      console.error("Error fetching stats:", error);
       res.status(500).json({ message: "خطأ في استرجاع الإحصائيات" });
     }
   });

@@ -1,6 +1,42 @@
-import { pgTable, text, serial, decimal, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, decimal, timestamp, varchar, index, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Session storage table for authentication
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User roles enum
+export const UserRole = {
+  ADMIN: "admin",
+  EDITOR: "editor", 
+  VIEWER: "viewer"
+} as const;
+
+export type UserRoleType = typeof UserRole[keyof typeof UserRole];
+
+// Users table with roles
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  username: varchar("username").notNull().unique(),
+  password: varchar("password").notNull(),
+  role: text("role").notNull().default(UserRole.VIEWER),
+  isActive: text("is_active").notNull().default("true"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 export const conventions = pgTable("conventions", {
   id: serial("id").primaryKey(),
@@ -11,12 +47,15 @@ export const conventions = pgTable("conventions", {
   status: text("status").notNull(),
   operationType: text("operation_type").notNull(),
   contractor: text("contractor").notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Schema for convention operations
 export const insertConventionSchema = createInsertSchema(conventions).omit({
   id: true,
+  createdBy: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -24,16 +63,31 @@ export const insertConventionSchema = createInsertSchema(conventions).omit({
 export type InsertConvention = z.infer<typeof insertConventionSchema>;
 export type Convention = typeof conventions.$inferSelect;
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+// Schema for user operations
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
+export const createUserSchema = insertUserSchema.pick({
   username: true,
   password: true,
+  role: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+}).extend({
+  password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export const loginSchema = z.object({
+  username: z.string().min(1, "اسم المستخدم مطلوب"),
+  password: z.string().min(1, "كلمة المرور مطلوبة"),
+});
+
+export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type CreateUser = z.infer<typeof createUserSchema>;
+export type LoginRequest = z.infer<typeof loginSchema>;
