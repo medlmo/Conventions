@@ -93,10 +93,14 @@ The application is configured for deployment on Replit with the following setup:
 - PostgreSQL 16 database module
 - Web module for static file serving
 
-## Changelog
+## Recent Changes
 
-Changelog:
-- June 24, 2025. Initial setup
+- June 24, 2025: Initial setup with basic convention management
+- June 24, 2025: Added authentication system with role-based access control
+  - Three user roles: Admin, Editor, Viewer
+  - Session-based authentication with PostgreSQL
+  - Complete user management interface for admins
+  - Role-based permissions for all operations
 
 ## User Preferences
 
