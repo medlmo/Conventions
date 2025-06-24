@@ -105,6 +105,11 @@ The application is configured for deployment on Replit with the following setup:
   - Created dedicated dashboard tab with statistics overview
   - Simplified dashboard to show only statistics without actions
   - Improved user experience with better organization
+- June 24, 2025: Enhanced convention form with new fields
+  - Added السنة (Year), الدورة (Session), المجال (Domain) fields
+  - Replaced نوع العملية with القطاع (Sector) field
+  - Added رقم المقرر (Decision Number) field
+  - Updated currency display from SAR to MAD throughout form
 
 ## User Preferences
 

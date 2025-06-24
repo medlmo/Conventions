@@ -30,7 +30,11 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       description: "",
       amount: "",
       status: "",
-      operationType: "",
+      year: "",
+      session: "",
+      domain: "",
+      sector: "",
+      decisionNumber: "",
       contractor: "",
     },
   });
@@ -97,7 +101,11 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         description: convention.description,
         amount: convention.amount,
         status: convention.status,
-        operationType: convention.operationType,
+        year: convention.year || "",
+        session: convention.session || "",
+        domain: convention.domain || "",
+        sector: convention.sector || "",
+        decisionNumber: convention.decisionNumber || "",
         contractor: convention.contractor,
       });
     } else {
@@ -107,7 +115,11 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         description: "",
         amount: "",
         status: "",
-        operationType: "",
+        year: "",
+        session: "",
+        domain: "",
+        sector: "",
+        decisionNumber: "",
         contractor: "",
       });
     }
@@ -176,7 +188,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>المبلغ (ريال سعودي)</FormLabel>
+                    <FormLabel>المبلغ (درهم مغربي)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -192,24 +204,101 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
 
               <FormField
                 control={form.control}
-                name="operationType"
+                name="year"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>نوع العملية</FormLabel>
+                    <FormLabel>السنة</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="2024"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="session"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الدورة</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="الدورة العادية الأولى"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="domain"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>المجال</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="اختر نوع العملية" />
+                          <SelectValue placeholder="اختر المجال" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="توريد">توريد</SelectItem>
-                        <SelectItem value="صيانة">صيانة</SelectItem>
-                        <SelectItem value="تطوير">تطوير</SelectItem>
-                        <SelectItem value="استشارة">استشارة</SelectItem>
-                        <SelectItem value="خدمات">خدمات</SelectItem>
+                        <SelectItem value="الصحة">الصحة</SelectItem>
+                        <SelectItem value="التعليم">التعليم</SelectItem>
+                        <SelectItem value="البنية التحتية">البنية التحتية</SelectItem>
+                        <SelectItem value="الثقافة والرياضة">الثقافة والرياضة</SelectItem>
+                        <SelectItem value="البيئة">البيئة</SelectItem>
+                        <SelectItem value="الخدمات الاجتماعية">الخدمات الاجتماعية</SelectItem>
+                        <SelectItem value="التنمية الاقتصادية">التنمية الاقتصادية</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sector"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>القطاع</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر القطاع" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="عام">عام</SelectItem>
+                        <SelectItem value="خاص">خاص</SelectItem>
+                        <SelectItem value="مختلط">مختلط</SelectItem>
+                        <SelectItem value="تعاوني">تعاوني</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="decisionNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>رقم المقرر</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="رقم المقرر"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

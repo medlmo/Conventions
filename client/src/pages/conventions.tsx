@@ -546,7 +546,7 @@ export default function ConventionsPage() {
                       <TableHead className="text-right">الوصف</TableHead>
                       <TableHead className="text-right">المبلغ</TableHead>
                       <TableHead className="text-right">الحالة</TableHead>
-                      <TableHead className="text-right">نوع العملية</TableHead>
+                      <TableHead className="text-right">القطاع</TableHead>
                       <TableHead className="text-right">الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -569,7 +569,7 @@ export default function ConventionsPage() {
                               {convention.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{convention.operationType}</TableCell>
+                          <TableCell>{convention.sector || "غير محدد"}</TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-reverse space-x-2">
                               <Button variant="ghost" size="sm">
