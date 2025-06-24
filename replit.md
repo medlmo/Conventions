@@ -106,4 +106,5 @@ The application is configured for deployment on Replit with the following setup:
 
 - Preferred communication style: Simple, everyday language
 - Number formatting: Use Western/English digits instead of Arabic digits
+- Currency: Use Moroccan Dirham (MAD/د.م) instead of Saudi Riyal (SAR/ر.س)
 - UI preferences: Remove settings page, focus on core functionality

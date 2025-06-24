@@ -393,12 +393,12 @@ export default function ConventionsPage() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <span className="text-emerald-600 font-bold text-sm">ر.س</span>
+                    <span className="text-emerald-600 font-bold text-sm">د.م</span>
                   </div>
                 </div>
                 <div className="mr-4">
                   <p className="text-sm font-medium text-gray-600">إجمالي القيمة</p>
-                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.totalValue || "0 ر.س"}</p>
+                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.totalValue || "MAD 0.00"}</p>
                 </div>
               </div>
             </CardContent>

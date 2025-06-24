@@ -9,7 +9,7 @@ export function formatCurrency(amount: number | string): string {
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'SAR',
+    currency: 'MAD',
     minimumFractionDigits: 2,
   }).format(numAmount);
 }

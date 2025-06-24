@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pending,
         progress,
         completed,
-        totalValue: totalValue.toLocaleString('en-US', { style: 'currency', currency: 'SAR' })
+        totalValue: totalValue.toLocaleString('en-US', { style: 'currency', currency: 'MAD' })
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
