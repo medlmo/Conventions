@@ -104,4 +104,6 @@ The application is configured for deployment on Replit with the following setup:
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- Preferred communication style: Simple, everyday language
+- Number formatting: Use Western/English digits instead of Arabic digits
+- UI preferences: Remove settings page, focus on core functionality

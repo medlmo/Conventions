@@ -210,7 +210,7 @@ export default function ConventionsPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3">
+          <TabsList className={`grid w-full ${permissions.canManageUsers ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <TabsTrigger value="conventions" className="flex items-center gap-2">
               <File className="h-4 w-4" />
               الاتفاقيات
@@ -221,10 +221,6 @@ export default function ConventionsPage() {
                 إدارة المستخدمين
               </TabsTrigger>
             )}
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              الإعدادات
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="conventions" className="space-y-6">
@@ -415,7 +411,7 @@ export default function ConventionsPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-cairo">قائمة الاتفاقيات</CardTitle>
               <div className="flex items-center space-x-reverse space-x-2">
-                <span className="text-sm text-gray-600">عرض 10 من النتائج</span>
+                <span className="text-sm text-gray-600">عرض {filteredConventions.length} من النتائج</span>
               </div>
             </div>
           </CardHeader>
@@ -495,34 +491,7 @@ export default function ConventionsPage() {
             </TabsContent>
           )}
 
-          <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-cairo">إعدادات النظام</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between py-4 border-b">
-                    <div>
-                      <h4 className="font-medium">معلومات المستخدم</h4>
-                      <p className="text-sm text-gray-600">اسم المستخدم: {user?.username}</p>
-                      <p className="text-sm text-gray-600">الدور: {getRoleDisplayName(user?.role || "")}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between py-4">
-                    <div>
-                      <h4 className="font-medium">تسجيل الخروج</h4>
-                      <p className="text-sm text-gray-600">إنهاء الجلسة الحالية</p>
-                    </div>
-                    <Button variant="destructive" onClick={handleLogout}>
-                      <LogOut className="ml-2 h-4 w-4" />
-                      تسجيل الخروج
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
         </Tabs>
       </main>
 
