@@ -145,6 +145,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get conventions statistics - All authenticated users can view stats
+  // IMPORTANT: This route must come BEFORE the /:id route to avoid conflicts
+  app.get("/api/conventions/stats", requireAuth, async (req, res) => {
+    try {
+      const allConventions = await storage.getAllConventions();
+      const total = allConventions.length;
+      const active = allConventions.filter(c => c.status === "نشطة").length;
+      const pending = allConventions.filter(c => c.status === "معلقة").length;
+      const progress = allConventions.filter(c => c.status === "قيد التنفيذ").length;
+      const completed = allConventions.filter(c => c.status === "مكتملة").length;
+      const totalValue = allConventions.reduce((sum, c) => {
+        const amount = parseFloat(c.amount || "0");
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
+
+      res.json({
+        total,
+        active,
+        pending,
+        progress,
+        completed,
+        totalValue: totalValue.toLocaleString('ar-SA', { style: 'currency', currency: 'SAR' })
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      res.status(500).json({ message: "خطأ في استرجاع الإحصائيات" });
+    }
+  });
+
+  // Search conventions - All authenticated users can search
+  app.get("/api/conventions/search/:query", requireAuth, async (req, res) => {
+    try {
+      const query = req.params.query;
+      const conventions = await storage.searchConventions(query);
+      res.json(conventions);
+    } catch (error) {
+      console.error("Error searching conventions:", error);
+      res.status(500).json({ message: "خطأ في البحث" });
+    }
+  });
+
   // Get convention by ID - All authenticated users can view
   app.get("/api/conventions/:id", requireAuth, async (req, res) => {
     try {
@@ -218,45 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Search conventions - All authenticated users can search
-  app.get("/api/conventions/search/:query", requireAuth, async (req, res) => {
-    try {
-      const query = req.params.query;
-      const conventions = await storage.searchConventions(query);
-      res.json(conventions);
-    } catch (error) {
-      console.error("Error searching conventions:", error);
-      res.status(500).json({ message: "خطأ في البحث" });
-    }
-  });
 
-  // Get conventions statistics - All authenticated users can view stats
-  app.get("/api/conventions/stats", requireAuth, async (req, res) => {
-    try {
-      const allConventions = await storage.getAllConventions();
-      const total = allConventions.length;
-      const active = allConventions.filter(c => c.status === "نشطة").length;
-      const pending = allConventions.filter(c => c.status === "معلقة").length;
-      const progress = allConventions.filter(c => c.status === "قيد التنفيذ").length;
-      const completed = allConventions.filter(c => c.status === "مكتملة").length;
-      const totalValue = allConventions.reduce((sum, c) => {
-        const amount = parseFloat(c.amount || "0");
-        return sum + (isNaN(amount) ? 0 : amount);
-      }, 0);
-
-      res.json({
-        total,
-        active,
-        pending,
-        progress,
-        completed,
-        totalValue: totalValue.toLocaleString('ar-SA', { style: 'currency', currency: 'SAR' })
-      });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-      res.status(500).json({ message: "خطأ في استرجاع الإحصائيات" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;
