@@ -21,7 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.validateUser(username, password);
       
       if (!user) {
-        return res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+        return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
       }
 
       req.session.userId = user.id;
