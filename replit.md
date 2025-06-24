@@ -103,7 +103,7 @@ The application is configured for deployment on Replit with the following setup:
   - Role-based permissions for all operations
 - June 24, 2025: Separated dashboard from conventions management
   - Created dedicated dashboard tab with statistics overview
-  - Added quick action cards for easy navigation
+  - Simplified dashboard to show only statistics without actions
   - Improved user experience with better organization
 
 ## User Preferences

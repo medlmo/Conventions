@@ -228,31 +228,11 @@ export default function ConventionsPage() {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
-            {/* Welcome Card */}
-            <Card className="border-0 bg-gradient-to-r from-blue-500 to-purple-600 text-white mb-6">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-cairo font-bold mb-2">
-                      مرحباً {user?.firstName || user?.username}
-                    </h2>
-                    <p className="text-blue-100">
-                      الدور: {getRoleDisplayName(user?.role || "")}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-reverse space-x-4">
-                    <Button
-                      variant="secondary"
-                      onClick={handleLogout}
-                      className="bg-white/20 hover:bg-white/30 text-white border-white/20"
-                    >
-                      <LogOut className="ml-2 h-4 w-4" />
-                      تسجيل الخروج
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Page Header */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-cairo font-bold text-gray-900 mb-2">لوحة المراقبة</h2>
+              <p className="text-gray-600">عرض شامل لإحصائيات النظام</p>
+            </div>
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
@@ -353,60 +333,7 @@ export default function ConventionsPage() {
               </Card>
             </div>
 
-            {/* Quick Actions for Dashboard */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("conventions")}>
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <File className="h-5 w-5 text-blue-600" />
-                      </div>
-                    </div>
-                    <div className="mr-4">
-                      <p className="text-sm font-medium text-gray-600">إدارة الاتفاقيات</p>
-                      <p className="text-sm text-gray-500">عرض وتحرير جميع الاتفاقيات</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {permissions.canManageUsers && (
-                <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("users")}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                          <Users className="h-5 w-5 text-green-600" />
-                        </div>
-                      </div>
-                      <div className="mr-4">
-                        <p className="text-sm font-medium text-gray-600">إدارة المستخدمين</p>
-                        <p className="text-sm text-gray-500">إضافة وإدارة المستخدمين</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {permissions.canCreateConvention && (
-                <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setActiveTab("conventions"); setIsFormOpen(true); }}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                          <Plus className="h-5 w-5 text-purple-600" />
-                        </div>
-                      </div>
-                      <div className="mr-4">
-                        <p className="text-sm font-medium text-gray-600">إضافة اتفاقية جديدة</p>
-                        <p className="text-sm text-gray-500">إنشاء اتفاقية جديدة</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+
           </TabsContent>
 
           <TabsContent value="conventions" className="space-y-6">
