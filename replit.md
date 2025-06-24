@@ -101,6 +101,10 @@ The application is configured for deployment on Replit with the following setup:
   - Session-based authentication with PostgreSQL
   - Complete user management interface for admins
   - Role-based permissions for all operations
+- June 24, 2025: Separated dashboard from conventions management
+  - Created dedicated dashboard tab with statistics overview
+  - Added quick action cards for easy navigation
+  - Improved user experience with better organization
 
 ## User Preferences
 
