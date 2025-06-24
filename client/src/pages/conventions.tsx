@@ -311,7 +311,7 @@ export default function ConventionsPage() {
         </Card>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
@@ -364,8 +364,40 @@ export default function ConventionsPage() {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <div className="h-5 w-5 bg-blue-600 rounded-full"></div>
+                  </div>
+                </div>
+                <div className="mr-4">
+                  <p className="text-sm font-medium text-gray-600">قيد التنفيذ</p>
+                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.progress || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <span className="text-purple-600 font-bold text-sm">ر.س</span>
+                    <div className="h-5 w-5 bg-purple-600 rounded-full"></div>
+                  </div>
+                </div>
+                <div className="mr-4">
+                  <p className="text-sm font-medium text-gray-600">مكتملة</p>
+                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.completed || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <span className="text-emerald-600 font-bold text-sm">ر.س</span>
                   </div>
                 </div>
                 <div className="mr-4">

@@ -149,6 +149,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/conventions/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "معرف الاتفاقية غير صحيح" });
+      }
       const convention = await storage.getConvention(id);
       if (!convention) {
         return res.status(404).json({ message: "الاتفاقية غير موجودة" });
@@ -179,6 +182,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/conventions/:id", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "معرف الاتفاقية غير صحيح" });
+      }
       const validatedData = insertConventionSchema.partial().parse(req.body);
       const convention = await storage.updateConvention(id, validatedData);
       if (!convention) {
@@ -198,6 +204,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/conventions/:id", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "معرف الاتفاقية غير صحيح" });
+      }
       const deleted = await storage.deleteConvention(id);
       if (!deleted) {
         return res.status(404).json({ message: "الاتفاقية غير موجودة" });
@@ -228,12 +237,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const total = allConventions.length;
       const active = allConventions.filter(c => c.status === "نشطة").length;
       const pending = allConventions.filter(c => c.status === "معلقة").length;
-      const totalValue = allConventions.reduce((sum, c) => sum + parseFloat(c.amount), 0);
+      const progress = allConventions.filter(c => c.status === "قيد التنفيذ").length;
+      const completed = allConventions.filter(c => c.status === "مكتملة").length;
+      const totalValue = allConventions.reduce((sum, c) => {
+        const amount = parseFloat(c.amount || "0");
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
 
       res.json({
         total,
         active,
         pending,
+        progress,
+        completed,
         totalValue: totalValue.toLocaleString('ar-SA', { style: 'currency', currency: 'SAR' })
       });
     } catch (error) {
