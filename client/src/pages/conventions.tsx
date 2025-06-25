@@ -549,20 +549,168 @@ export default function ConventionsPage() {
 
       {viewingConvention && (
         <Dialog open={!!viewingConvention} onOpenChange={() => setViewingConvention(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>تفاصيل الاتفاقية</DialogTitle>
+              <DialogTitle className="font-cairo flex items-center justify-between">
+                <span>تفاصيل الاتفاقية</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const conventionData = `
+تفاصيل الاتفاقية
+
+رقم الاتفاقية: ${viewingConvention.conventionNumber}
+التاريخ: ${formatDate(viewingConvention.date)}
+السنة: ${viewingConvention.year}
+الدورة: ${viewingConvention.session}
+المجال: ${viewingConvention.domain}
+القطاع: ${viewingConvention.sector}
+رقم المقرر: ${viewingConvention.decisionNumber}
+الحالة: ${viewingConvention.status}
+
+الاتفاقية:
+${viewingConvention.description}
+
+الكلفة الإجمالية: ${formatCurrency(viewingConvention.amount)}
+مساهمة الجهة: ${viewingConvention.contribution ? formatCurrency(viewingConvention.contribution) : 'غير محدد'}
+صاحب المشروع: ${viewingConvention.contractor}
+
+${viewingConvention.province && viewingConvention.province.length > 0 ? `العمالة/الإقليم: ${viewingConvention.province.join(', ')}` : ''}
+${viewingConvention.partners && viewingConvention.partners.length > 0 ? `الشركاء: ${viewingConvention.partners.join(', ')}` : ''}
+${viewingConvention.attachments && viewingConvention.attachments.length > 0 ? `عدد المرفقات: ${viewingConvention.attachments.length}` : ''}
+                    `;
+                    
+                    const blob = new Blob([conventionData], { type: 'text/plain;charset=utf-8' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `اتفاقية_${viewingConvention.conventionNumber}.txt`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+                  }}
+                  className="text-green-600 hover:text-green-700"
+                >
+                  <Download className="h-4 w-4 ml-2" />
+                  تحميل الاتفاقية
+                </Button>
+              </DialogTitle>
             </DialogHeader>
-            <div className="space-y-2 text-right">
-              <p><b>رقم الاتفاقية:</b> {viewingConvention.conventionNumber}</p>
-              <p><b>الوصف:</b> {viewingConvention.description}</p>
-              <p><b>المبلغ:</b> {formatCurrency(viewingConvention.amount)}</p>
-              <p><b>الدورة:</b> {viewingConvention.session}</p>
-              <p><b>المجال:</b> {viewingConvention.domain}</p>
-              <p><b>القطاع:</b> {viewingConvention.sector}</p>
-              <p><b>حالة الاتفاقية:</b> {viewingConvention.status}</p>
-              <p><b>الجهة المتعاقدة:</b> {viewingConvention.contractor}</p>
-              {/* Ajoutez d'autres champs si besoin */}
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-gray-700">رقم الاتفاقية</h4>
+                  <p className="text-gray-900">{viewingConvention.conventionNumber}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">التاريخ</h4>
+                  <p className="text-gray-900">{formatDate(viewingConvention.date)}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">السنة</h4>
+                  <p className="text-gray-900">{viewingConvention.year}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">الدورة</h4>
+                  <p className="text-gray-900">{viewingConvention.session}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">المجال</h4>
+                  <p className="text-gray-900">{viewingConvention.domain}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">القطاع</h4>
+                  <p className="text-gray-900">{viewingConvention.sector}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">رقم المقرر</h4>
+                  <p className="text-gray-900">{viewingConvention.decisionNumber}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">الحالة</h4>
+                  <Badge className={getStatusBadgeClass(viewingConvention.status)}>
+                    {viewingConvention.status}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">الاتفاقية</h4>
+                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{viewingConvention.description}</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-gray-700">الكلفة الإجمالية</h4>
+                  <p className="text-gray-900 font-semibold">{formatCurrency(viewingConvention.amount)}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">مساهمة الجهة</h4>
+                  <p className="text-gray-900">{viewingConvention.contribution ? formatCurrency(viewingConvention.contribution) : 'غير محدد'}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">صاحب المشروع</h4>
+                  <p className="text-gray-900">{viewingConvention.contractor}</p>
+                </div>
+              </div>
+              
+              {viewingConvention.province && viewingConvention.province.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">العمالة/الإقليم</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingConvention.province.map((prov, index) => (
+                      <Badge key={index} variant="secondary">{prov}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {viewingConvention.partners && viewingConvention.partners.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">الشركاء</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingConvention.partners.map((partner, index) => (
+                      <Badge key={index} variant="secondary">{partner}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {viewingConvention.attachments && viewingConvention.attachments.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">المرفقات</h4>
+                  <div className="space-y-2">
+                    {viewingConvention.attachments.map((attachment, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                        <div className="flex items-center space-x-reverse space-x-2">
+                          <File className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm text-gray-700">
+                            {attachment.split('/').pop()}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = attachment;
+                            link.download = attachment.split('/').pop() || 'file';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="text-blue-500 hover:text-blue-700"
+                          title="تحميل الملف"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
