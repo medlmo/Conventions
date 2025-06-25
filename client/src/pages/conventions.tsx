@@ -235,98 +235,98 @@ export default function ConventionsPage() {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-              <Card>
-                <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-6">
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                         <div className="h-5 w-5 bg-gray-600 rounded-full"></div>
                       </div>
                     </div>
-                    <div className="mr-4">
-                      <p className="text-sm font-medium text-gray-600">إجمالي الاتفاقيات</p>
-                      <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.total || 0}</p>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">إجمالي الاتفاقيات</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.total || 0}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-6">
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                         <div className="h-5 w-5 bg-green-600 rounded-full"></div>
                       </div>
                     </div>
-                    <div className="mr-4">
-                      <p className="text-sm font-medium text-gray-600">اتفاقيات نشطة</p>
-                      <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.active || 0}</p>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">اتفاقيات نشطة</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.active || 0}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-6">
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
                         <div className="h-5 w-5 bg-yellow-600 rounded-full"></div>
                       </div>
                     </div>
-                    <div className="mr-4">
-                      <p className="text-sm font-medium text-gray-600">اتفاقيات معلقة</p>
-                      <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.pending || 0}</p>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">اتفاقيات معلقة</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.pending || 0}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardContent className="p-6">
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                         <div className="h-5 w-5 bg-blue-600 rounded-full"></div>
                       </div>
                     </div>
-                    <div className="mr-4">
-                      <p className="text-sm font-medium text-gray-600">قيد التنفيذ</p>
-                      <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.progress || 0}</p>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">قيد التنفيذ</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.progress || 0}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardContent className="p-6">
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                         <div className="h-5 w-5 bg-purple-600 rounded-full"></div>
                       </div>
                     </div>
-                    <div className="mr-4">
-                      <p className="text-sm font-medium text-gray-600">مكتملة</p>
-                      <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.completed || 0}</p>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">مكتملة</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.completed || 0}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardContent className="p-6">
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                        <span className="text-emerald-600 font-bold text-sm">د.م</span>
+                        <span className="text-emerald-600 font-bold text-xs">د.م</span>
                       </div>
                     </div>
-                    <div className="mr-4">
-                      <p className="text-sm font-medium text-gray-600">إجمالي القيمة</p>
-                      <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.totalValue || "MAD 0.00"}</p>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">إجمالي القيمة</p>
+                      <p className="text-sm font-cairo font-bold text-gray-900 truncate">{stats?.totalValue || "MAD 0.00"}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -418,105 +418,6 @@ export default function ConventionsPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <File className="h-5 w-5 text-blue-600" />
-                  </div>
-                </div>
-                <div className="mr-4">
-                  <p className="text-sm font-medium text-gray-600">إجمالي الاتفاقيات</p>
-                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.total || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <div className="h-5 w-5 bg-green-600 rounded-full"></div>
-                  </div>
-                </div>
-                <div className="mr-4">
-                  <p className="text-sm font-medium text-gray-600">اتفاقيات نشطة</p>
-                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.active || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <div className="h-5 w-5 bg-yellow-600 rounded-full"></div>
-                  </div>
-                </div>
-                <div className="mr-4">
-                  <p className="text-sm font-medium text-gray-600">اتفاقيات معلقة</p>
-                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.pending || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <div className="h-5 w-5 bg-blue-600 rounded-full"></div>
-                  </div>
-                </div>
-                <div className="mr-4">
-                  <p className="text-sm font-medium text-gray-600">قيد التنفيذ</p>
-                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.progress || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <div className="h-5 w-5 bg-purple-600 rounded-full"></div>
-                  </div>
-                </div>
-                <div className="mr-4">
-                  <p className="text-sm font-medium text-gray-600">مكتملة</p>
-                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.completed || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <span className="text-emerald-600 font-bold text-sm">د.م</span>
-                  </div>
-                </div>
-                <div className="mr-4">
-                  <p className="text-sm font-medium text-gray-600">إجمالي القيمة</p>
-                  <p className="text-2xl font-cairo font-bold text-gray-900">{stats?.totalValue || "MAD 0.00"}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Data Table */}
         <Card>

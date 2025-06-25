@@ -170,10 +170,10 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                 name="description"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>وصف الاتفاقية</FormLabel>
+                    <FormLabel>الاتفاقية</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="وصف تفصيلي للاتفاقية..."
+                        placeholder="الاتفاقية"
                         rows={3}
                         {...field}
                       />
@@ -188,7 +188,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>المبلغ (درهم مغربي)</FormLabel>
+                    <FormLabel>الكلفة الاجمالية</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -210,7 +210,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                     <FormLabel>السنة</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="2024"
+                        placeholder="2025"
                         {...field}
                       />
                     </FormControl>
@@ -227,7 +227,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                     <FormLabel>الدورة</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="الدورة العادية الأولى"
+                        placeholder=" دورة مارس 2025"
                         {...field}
                       />
                     </FormControl>
@@ -276,10 +276,24 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="عام">عام</SelectItem>
-                        <SelectItem value="خاص">خاص</SelectItem>
-                        <SelectItem value="مختلط">مختلط</SelectItem>
-                        <SelectItem value="تعاوني">تعاوني</SelectItem>
+                        <SelectItem value="السياحة">السياحة</SelectItem>
+                        <SelectItem value="التشغيل">التشغيل</SelectItem>
+                        <SelectItem value="الصحة">الصحة</SelectItem>
+                        <SelectItem value="الصناعة التقليدية">الصناعة التقليدية</SelectItem>
+                        <SelectItem value="الطرق">الطرق</SelectItem>
+                        <SelectItem value="الصيد البحري و تربية الأحياء البحرية">الصيد البحري و تربية الأحياء البحرية</SelectItem>
+                        <SelectItem value="الفلاحة">الفلاحة</SelectItem>
+                        <SelectItem value="اعداد التراب">اعداد التراب </SelectItem>
+                        <SelectItem value="التعاون الدولي">التعاون الدولي </SelectItem>
+                        <SelectItem value="التعليم">التعليم</SelectItem>
+                        <SelectItem value="التكوين المهني"> التكوين المهني </SelectItem>
+                        <SelectItem value="التأهيل الاجتماعي">التأهيل الاجتماعي</SelectItem>
+                        <SelectItem value="التنمية القروية">التنمية القروية</SelectItem>
+                        <SelectItem value="الرياضة">الرياضة</SelectItem>
+                        <SelectItem value="الحد من آثار الكوارث الطبيعية والفياضانات"> الحد من آثار الكوارث الطبيعية والفياضانات</SelectItem>
+                        <SelectItem value="التعاون الدولي">التعاون الدولي </SelectItem>
+                        <SelectItem value="التسريع الصناعي">التسريع الصناعي </SelectItem>
+                        <SelectItem value="احداث و تدبير المؤسسات الثقافية">احداث و تدبير المؤسسات الثقافية</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
