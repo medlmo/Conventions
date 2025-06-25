@@ -31,8 +31,8 @@ export default function ConventionsPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [domainFilter, setDomainFilter] = useState("");
+  const [sectorFilter, setSectorFilter] = useState("");
 
   // Fetch conventions
   const { data: conventions = [], isLoading } = useQuery<Convention[]>({
@@ -77,10 +77,10 @@ export default function ConventionsPage() {
     
     const matchesStatus = !statusFilter || statusFilter === "all" || convention.status === statusFilter;
     
-    const matchesDateRange = (!dateFrom || new Date(convention.date) >= new Date(dateFrom)) &&
-      (!dateTo || new Date(convention.date) <= new Date(dateTo));
+    const matchesDomain = !domainFilter || domainFilter === "all" || convention.domain === domainFilter;
+    const matchesSector = !sectorFilter || sectorFilter === "all" || convention.sector === sectorFilter;
     
-    return matchesSearch && matchesStatus && matchesDateRange;
+    return matchesSearch && matchesStatus && matchesDomain && matchesSector;
   });
 
 
@@ -150,8 +150,8 @@ export default function ConventionsPage() {
   const clearFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
-    setDateFrom("");
-    setDateTo("");
+    setDomainFilter("all");
+    setSectorFilter("all");
   };
 
   return (
@@ -326,7 +326,7 @@ export default function ConventionsPage() {
                     </div>
                     <div className="mr-3 min-w-0 flex-1">
                       <p className="text-xs font-medium text-gray-600 truncate">إجمالي القيمة</p>
-                      <p className="text-sm font-cairo font-bold text-gray-900 truncate">{stats?.totalValue || "MAD 0.00"}</p>
+                      <p className="text-sm font-cairo font-bold text-gray-900 truncate">{stats?.totalValue || "درهم 0.00"}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -381,30 +381,56 @@ export default function ConventionsPage() {
                     <SelectValue placeholder="جميع الحالات" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">جميع الحالات</SelectItem>
-                    <SelectItem value="نشطة">نشطة</SelectItem>
-                    <SelectItem value="معلقة">معلقة</SelectItem>
-                    <SelectItem value="قيد التنفيذ">قيد التنفيذ</SelectItem>
-                    <SelectItem value="مكتملة">مكتملة</SelectItem>
-                    <SelectItem value="ملغية">ملغية</SelectItem>
+                    <SelectItem value="في طور التوقيع"> في طور التوقيع</SelectItem>
+                    <SelectItem value="في طور التأشير">في طور التأشير</SelectItem>
+                    <SelectItem value="مؤشرة">مؤشرة</SelectItem>
+                    <SelectItem value="مفعلة">مفعلة</SelectItem>
+                    <SelectItem value="غير مفعلة">غير مفعلة</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">من تاريخ</label>
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">المجال</label>
+                <Select value={domainFilter} onValueChange={setDomainFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="جميع المجالات" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع المجالات</SelectItem>
+                    <SelectItem value="السياحة">السياحة</SelectItem>
+                    <SelectItem value="التشغيل">التشغيل</SelectItem>
+                    <SelectItem value="الصحة">الصحة</SelectItem>
+                    <SelectItem value="الصناعة التقليدية">الصناعة التقليدية</SelectItem>
+                    <SelectItem value="الطرق">الطرق</SelectItem>
+                    <SelectItem value="الصيد البحري و تربية الأحياء البحرية">الصيد البحري و تربية الأحياء البحرية</SelectItem>
+                    <SelectItem value="الفلاحة">الفلاحة</SelectItem>
+                    <SelectItem value="اعداد التراب">اعداد التراب </SelectItem>
+                    <SelectItem value="التعليم">التعليم</SelectItem>
+                    <SelectItem value="التكوين المهني"> التكوين المهني </SelectItem>
+                    <SelectItem value="التأهيل الاجتماعي">التأهيل الاجتماعي</SelectItem>
+                    <SelectItem value="التنمية القروية">التنمية القروية</SelectItem>
+                    <SelectItem value="الرياضة">الرياضة</SelectItem>
+                    <SelectItem value="الحد من آثار الكوارث الطبيعية والفياضانات"> الحد من آثار الكوارث الطبيعية والفياضانات</SelectItem>
+                    <SelectItem value="التعاون الدولي">التعاون الدولي </SelectItem>
+                    <SelectItem value="التسريع الصناعي">التسريع الصناعي </SelectItem>
+                    <SelectItem value="احداث و تدبير المؤسسات الثقافية">احداث و تدبير المؤسسات الثقافية</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">إلى تاريخ</label>
-                <Input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">القطاع</label>
+                <Select value={sectorFilter} onValueChange={setSectorFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="جميع القطاعات" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع القطاعات</SelectItem>
+                    <SelectItem value="التنمية الإقتصادية">التنمية الإقتصادية</SelectItem>
+                    <SelectItem value="التنمية المجالية">التنمية المجالية</SelectItem>
+                    <SelectItem value="الشراكة والتعاون الدولي">الشراكة والتعاون الدولي</SelectItem>
+                    <SelectItem value="الشؤون الاجتماعية و الثقافية والرياضية">الشؤون الاجتماعية و الثقافية والرياضية</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="flex justify-between items-center mt-4">
@@ -444,8 +470,8 @@ export default function ConventionsPage() {
                     <TableRow>
                       <TableHead className="text-right">الإجراءات</TableHead>
                       <TableHead className="text-right">القطاع</TableHead>
-                      <TableHead className="text-right">المبلغ</TableHead>
-                      <TableHead className="text-right">الوصف</TableHead>
+                      <TableHead className="text-right">الكلفة الاجمالية</TableHead>
+                      <TableHead className="text-right">الاتفاقية</TableHead>
                       <TableHead className="text-right">الدورة</TableHead>
                       <TableHead className="text-right">رقم الاتفاقية</TableHead>
                     </TableRow>

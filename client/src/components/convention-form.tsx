@@ -275,13 +275,23 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                      <SelectItem value="السياحة">السياحة</SelectItem>
+                        <SelectItem value="التشغيل">التشغيل</SelectItem>
                         <SelectItem value="الصحة">الصحة</SelectItem>
+                        <SelectItem value="الصناعة التقليدية">الصناعة التقليدية</SelectItem>
+                        <SelectItem value="الطرق">الطرق</SelectItem>
+                        <SelectItem value="الصيد البحري و تربية الأحياء البحرية">الصيد البحري و تربية الأحياء البحرية</SelectItem>
+                        <SelectItem value="الفلاحة">الفلاحة</SelectItem>
+                        <SelectItem value="اعداد التراب">اعداد التراب </SelectItem>
                         <SelectItem value="التعليم">التعليم</SelectItem>
-                        <SelectItem value="البنية التحتية">البنية التحتية</SelectItem>
-                        <SelectItem value="الثقافة والرياضة">الثقافة والرياضة</SelectItem>
-                        <SelectItem value="البيئة">البيئة</SelectItem>
-                        <SelectItem value="الخدمات الاجتماعية">الخدمات الاجتماعية</SelectItem>
-                        <SelectItem value="التنمية الاقتصادية">التنمية الاقتصادية</SelectItem>
+                        <SelectItem value="التكوين المهني"> التكوين المهني </SelectItem>
+                        <SelectItem value="التأهيل الاجتماعي">التأهيل الاجتماعي</SelectItem>
+                        <SelectItem value="التنمية القروية">التنمية القروية</SelectItem>
+                        <SelectItem value="الرياضة">الرياضة</SelectItem>
+                        <SelectItem value="الحد من آثار الكوارث الطبيعية والفياضانات"> الحد من آثار الكوارث الطبيعية والفياضانات</SelectItem>
+                        <SelectItem value="التعاون الدولي">التعاون الدولي </SelectItem>
+                        <SelectItem value="التسريع الصناعي">التسريع الصناعي </SelectItem>
+                        <SelectItem value="احداث و تدبير المؤسسات الثقافية">احداث و تدبير المؤسسات الثقافية</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -302,24 +312,11 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="السياحة">السياحة</SelectItem>
-                        <SelectItem value="التشغيل">التشغيل</SelectItem>
-                        <SelectItem value="الصحة">الصحة</SelectItem>
-                        <SelectItem value="الصناعة التقليدية">الصناعة التقليدية</SelectItem>
-                        <SelectItem value="الطرق">الطرق</SelectItem>
-                        <SelectItem value="الصيد البحري و تربية الأحياء البحرية">الصيد البحري و تربية الأحياء البحرية</SelectItem>
-                        <SelectItem value="الفلاحة">الفلاحة</SelectItem>
-                        <SelectItem value="اعداد التراب">اعداد التراب </SelectItem>
-                        <SelectItem value="التعاون الدولي">التعاون الدولي </SelectItem>
-                        <SelectItem value="التعليم">التعليم</SelectItem>
-                        <SelectItem value="التكوين المهني"> التكوين المهني </SelectItem>
-                        <SelectItem value="التأهيل الاجتماعي">التأهيل الاجتماعي</SelectItem>
-                        <SelectItem value="التنمية القروية">التنمية القروية</SelectItem>
-                        <SelectItem value="الرياضة">الرياضة</SelectItem>
-                        <SelectItem value="الحد من آثار الكوارث الطبيعية والفياضانات"> الحد من آثار الكوارث الطبيعية والفياضانات</SelectItem>
-                        <SelectItem value="التعاون الدولي">التعاون الدولي </SelectItem>
-                        <SelectItem value="التسريع الصناعي">التسريع الصناعي </SelectItem>
-                        <SelectItem value="احداث و تدبير المؤسسات الثقافية">احداث و تدبير المؤسسات الثقافية</SelectItem>
+                      <SelectItem value="التنمية الإقتصادية">التنمية الإقتصادية</SelectItem>
+                        <SelectItem value="التنمية المجالية">التنمية المجالية</SelectItem>
+                        <SelectItem value="الشراكة والتعاون الدولي">الشراكة والتعاون الدولي</SelectItem>
+                        <SelectItem value="الشؤون الاجتماعية و الثقافية والرياضية">الشؤون الاجتماعية و الثقافية والرياضية</SelectItem>
+                        
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -397,6 +394,31 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         placeholder="اختر العمالة/الإقليم"
                         classNamePrefix="react-select"
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>حالة الاتفاقية</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر حالة الاتفاقية" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="في طور التوقيع">في طور التوقيع</SelectItem>
+                          <SelectItem value="في طور التأشير">في طور التأشير</SelectItem>
+                          <SelectItem value="مؤشرة">مؤشرة</SelectItem>
+                          <SelectItem value="مفعلة">مفعلة</SelectItem>
+                          <SelectItem value="غير مفعلة">غير مفعلة</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
