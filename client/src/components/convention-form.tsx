@@ -275,7 +275,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                      <SelectItem value="السياحة">السياحة</SelectItem>
+                        <SelectItem value="السياحة">السياحة</SelectItem>
                         <SelectItem value="التشغيل">التشغيل</SelectItem>
                         <SelectItem value="الصحة">الصحة</SelectItem>
                         <SelectItem value="الصناعة التقليدية">الصناعة التقليدية</SelectItem>

@@ -19,6 +19,7 @@ import { UserManagement } from "@/components/user-management";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "@/lib/utils";
 import { getRoleDisplayName } from "@/lib/authUtils";
 import { File, Plus, Download, Search, Eye, Edit, Trash2, Bell, LogOut, Users, Settings, BarChart3 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function ConventionsPage() {
   const { user, logout } = useAuth();
@@ -33,6 +34,7 @@ export default function ConventionsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [domainFilter, setDomainFilter] = useState("");
   const [sectorFilter, setSectorFilter] = useState("");
+  const [viewingConvention, setViewingConvention] = useState<Convention | null>(null);
 
   // Fetch conventions
   const { data: conventions = [], isLoading } = useQuery<Convention[]>({
@@ -488,7 +490,7 @@ export default function ConventionsPage() {
                         <TableRow key={convention.id} className="hover:bg-gray-50">
                           <TableCell>
                             <div className="flex items-center space-x-reverse space-x-2">
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" onClick={() => setViewingConvention(convention)}>
                                 <Eye className="h-4 w-4" />
                               </Button>
                               {permissions.canEditConvention && (
@@ -544,6 +546,27 @@ export default function ConventionsPage() {
         onConfirm={() => deletingId && deleteMutation.mutate(deletingId)}
         isLoading={deleteMutation.isPending}
       />
+
+      {viewingConvention && (
+        <Dialog open={!!viewingConvention} onOpenChange={() => setViewingConvention(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>تفاصيل الاتفاقية</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 text-right">
+              <p><b>رقم الاتفاقية:</b> {viewingConvention.conventionNumber}</p>
+              <p><b>الوصف:</b> {viewingConvention.description}</p>
+              <p><b>المبلغ:</b> {formatCurrency(viewingConvention.amount)}</p>
+              <p><b>الدورة:</b> {viewingConvention.session}</p>
+              <p><b>المجال:</b> {viewingConvention.domain}</p>
+              <p><b>القطاع:</b> {viewingConvention.sector}</p>
+              <p><b>حالة الاتفاقية:</b> {viewingConvention.status}</p>
+              <p><b>الجهة المتعاقدة:</b> {viewingConvention.contractor}</p>
+              {/* Ajoutez d'autres champs si besoin */}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
