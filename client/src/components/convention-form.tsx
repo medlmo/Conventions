@@ -16,7 +16,7 @@ import { soussMassaProvinces } from "@/lib/provinces";
 import { partnersList } from "@/lib/partners";
 import ReactSelect from 'react-select';
 import { useState, useRef } from "react";
-import { File, X, Upload } from "lucide-react";
+import { File, X, Upload, Download } from "lucide-react";
 
 interface ConventionFormProps {
   open: boolean;
@@ -141,6 +141,16 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
     const newFiles = uploadedFiles.filter((_, i) => i !== index);
     setUploadedFiles(newFiles);
     form.setValue('attachments', newFiles.map(f => f.path));
+  };
+
+  const downloadFile = (file: any) => {
+    // Create a link to download the file
+    const link = document.createElement('a');
+    link.href = file.path;
+    link.download = file.originalName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const onSubmit = (data: InsertConvention) => {
@@ -531,19 +541,34 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                           <div className="flex items-center space-x-reverse space-x-2">
                             <File className="h-4 w-4 text-gray-500" />
                             <span className="text-sm text-gray-700">{file.originalName}</span>
-                            <span className="text-xs text-gray-500">
-                              ({(file.size / 1024 / 1024).toFixed(2)} ميجابايت)
-                            </span>
+                            {file.size > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ({(file.size / 1024 / 1024).toFixed(2)} ميجابايت)
+                              </span>
+                            )}
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFile(index)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center space-x-reverse space-x-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => downloadFile(file)}
+                              className="text-blue-500 hover:text-blue-700"
+                              title="تحميل الملف"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFile(index)}
+                              className="text-red-500 hover:text-red-700"
+                              title="حذف الملف"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -110,6 +110,12 @@ The application is configured for deployment on Replit with the following setup:
   - Replaced نوع العملية with القطاع (Sector) field
   - Added رقم المقرر (Decision Number) field
   - Updated currency display from SAR to MAD throughout form
+- June 24, 2025: Implemented file attachment system
+  - Added file upload functionality to convention forms
+  - Support for PDF, Word, Excel, and image files (10MB limit)
+  - Secure file storage with multer middleware
+  - Download functionality for attached files
+  - File management in both form editing and convention viewing
 - January 24, 2025: Added file upload functionality to convention forms
   - Implemented secure file upload with multer for PDF, Word, Excel, and image files
   - Added attachments field to database schema and storage operations
