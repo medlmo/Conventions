@@ -111,12 +111,22 @@ export class DatabaseStorage implements IStorage {
 
   // Convention operations  
   async getAllConventions(): Promise<Convention[]> {
-    return await db.select().from(conventions).orderBy(conventions.createdAt);
+    const rows = await db.select().from(conventions).orderBy(conventions.createdAt);
+    return rows.map(c => ({
+      ...c,
+      province: c.province ? JSON.parse(c.province) : [],
+      partners: c.partners ? JSON.parse(c.partners) : [],
+    }));
   }
 
   async getConvention(id: number): Promise<Convention | undefined> {
-    const [convention] = await db.select().from(conventions).where(eq(conventions.id, id));
-    return convention;
+    const [c] = await db.select().from(conventions).where(eq(conventions.id, id));
+    if (!c) return undefined;
+    return {
+      ...c,
+      province: c.province ? JSON.parse(c.province) : [],
+      partners: c.partners ? JSON.parse(c.partners) : [],
+    };
   }
 
   async createConvention(conventionData: InsertConvention, createdBy: string): Promise<Convention> {
@@ -124,19 +134,36 @@ export class DatabaseStorage implements IStorage {
       .insert(conventions)
       .values({
         ...conventionData,
+        province: conventionData.province ? JSON.stringify(conventionData.province) : null,
+        partners: conventionData.partners ? JSON.stringify(conventionData.partners) : null,
         createdBy,
       })
       .returning();
-    return convention;
+    return {
+      ...convention,
+      province: convention.province ? JSON.parse(convention.province) : [],
+      partners: convention.partners ? JSON.parse(convention.partners) : [],
+    };
   }
 
   async updateConvention(id: number, updateData: Partial<InsertConvention>): Promise<Convention | undefined> {
     const [convention] = await db
       .update(conventions)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set({
+        ...updateData,
+        province: updateData.province ? JSON.stringify(updateData.province) : null,
+        partners: updateData.partners ? JSON.stringify(updateData.partners) : null,
+        updatedAt: new Date(),
+      })
       .where(eq(conventions.id, id))
       .returning();
-    return convention;
+    return convention
+      ? {
+          ...convention,
+          province: convention.province ? JSON.parse(convention.province) : [],
+          partners: convention.partners ? JSON.parse(convention.partners) : [],
+        }
+      : undefined;
   }
 
   async deleteConvention(id: number): Promise<boolean> {

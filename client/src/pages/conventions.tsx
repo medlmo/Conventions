@@ -442,35 +442,24 @@ export default function ConventionsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-right">رقم الاتفاقية</TableHead>
-                      <TableHead className="text-right">التاريخ</TableHead>
-                      <TableHead className="text-right">الوصف</TableHead>
-                      <TableHead className="text-right">المبلغ</TableHead>
-                      <TableHead className="text-right">الحالة</TableHead>
-                      <TableHead className="text-right">القطاع</TableHead>
                       <TableHead className="text-right">الإجراءات</TableHead>
+                      <TableHead className="text-right">القطاع</TableHead>
+                      <TableHead className="text-right">المبلغ</TableHead>
+                      <TableHead className="text-right">الوصف</TableHead>
+                      <TableHead className="text-right">الدورة</TableHead>
+                      <TableHead className="text-right">رقم الاتفاقية</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredConventions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
+                        <TableCell colSpan={6} className="text-center py-8">
                           <p className="text-gray-500">لا توجد اتفاقيات للعرض</p>
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredConventions.map((convention) => (
                         <TableRow key={convention.id} className="hover:bg-gray-50">
-                          <TableCell className="font-medium">{convention.conventionNumber}</TableCell>
-                          <TableCell>{formatDate(convention.date)}</TableCell>
-                          <TableCell className="max-w-xs truncate">{convention.description}</TableCell>
-                          <TableCell className="font-medium">{formatCurrency(convention.amount)}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusBadgeClass(convention.status)}>
-                              {convention.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{convention.sector || "غير محدد"}</TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-reverse space-x-2">
                               <Button variant="ghost" size="sm">
@@ -488,6 +477,11 @@ export default function ConventionsPage() {
                               )}
                             </div>
                           </TableCell>
+                          <TableCell>{convention.sector || "غير محدد"}</TableCell>
+                          <TableCell className="font-medium">{formatCurrency(convention.amount)}</TableCell>
+                          <TableCell className="max-w-xs truncate">{convention.description}</TableCell>
+                          <TableCell>{convention.session}</TableCell>
+                          <TableCell className="font-medium">{convention.conventionNumber}</TableCell>
                         </TableRow>
                       ))
                     )}

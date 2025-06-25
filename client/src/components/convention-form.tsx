@@ -12,6 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { soussMassaProvinces } from "@/lib/provinces";
+import { partnersList } from "@/lib/partners";
+import ReactSelect from 'react-select';
 
 interface ConventionFormProps {
   open: boolean;
@@ -36,6 +39,9 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       sector: "",
       decisionNumber: "",
       contractor: "",
+      contribution: "",
+      province: [],
+      partners: [],
     },
   });
 
@@ -107,6 +113,9 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         sector: convention.sector || "",
         decisionNumber: convention.decisionNumber || "",
         contractor: convention.contractor,
+        contribution: convention.contribution || "",
+        province: convention.province || [],
+        partners: convention.partners || [],
       });
     } else {
       form.reset({
@@ -121,6 +130,9 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         sector: "",
         decisionNumber: "",
         contractor: "",
+        contribution: "",
+        province: [],
+        partners: [],
       });
     }
   }, [convention, form]);
@@ -185,25 +197,6 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
 
               <FormField
                 control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>الكلفة الاجمالية</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="year"
                 render={({ field }) => (
                   <FormItem>
@@ -230,6 +223,39 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         placeholder=" دورة مارس 2025"
                         {...field}
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الكلفة الاجمالية</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="contribution"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>مساهمة الجهة</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="مثال: 100000" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -320,38 +346,13 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
 
               <FormField
                 control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>حالة الاتفاقية</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر الحالة" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="نشطة">نشطة</SelectItem>
-                        <SelectItem value="معلقة">معلقة</SelectItem>
-                        <SelectItem value="قيد التنفيذ">قيد التنفيذ</SelectItem>
-                        <SelectItem value="مكتملة">مكتملة</SelectItem>
-                        <SelectItem value="ملغية">ملغية</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="contractor"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>الجهة المتعاقدة</FormLabel>
+                    <FormLabel>صاحب المشروع </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="اسم الجهة أو الشركة المتعاقدة"
+                        placeholder="صاحب المشروع "
                         {...field}
                       />
                     </FormControl>
@@ -359,6 +360,49 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="partners"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الشركاء</FormLabel>
+                    <FormControl>
+                      <ReactSelect
+                        isMulti
+                        options={partnersList.map(p => ({ value: p, label: p }))}
+                        value={field.value?.map((v: string) => ({ value: v, label: v }))}
+                        onChange={selected => field.onChange(selected.map((opt: any) => opt.value))}
+                        placeholder="اختر الشركاء"
+                        classNamePrefix="react-select"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="province"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>العمالة/الإقليم</FormLabel>
+                    <FormControl>
+                      <ReactSelect
+                        isMulti
+                        options={soussMassaProvinces.map(p => ({ value: p, label: p }))}
+                        value={field.value?.map((v: string) => ({ value: v, label: v }))}
+                        onChange={selected => field.onChange(selected.map((opt: any) => opt.value))}
+                        placeholder="اختر العمالة/الإقليم"
+                        classNamePrefix="react-select"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
             </div>
 
             <div className="flex justify-end space-x-reverse space-x-3 pt-4 border-t border-gray-200">

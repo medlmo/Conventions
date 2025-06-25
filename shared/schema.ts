@@ -51,6 +51,9 @@ export const conventions = pgTable("conventions", {
   sector: text("sector").notNull(),
   decisionNumber: text("decision_number").notNull(),
   contractor: text("contractor").notNull(),
+  contribution: decimal("contribution", { precision: 12, scale: 2 }),
+  province: text("province"),
+  partners: text("partners"),
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -62,6 +65,10 @@ export const insertConventionSchema = createInsertSchema(conventions).omit({
   createdBy: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  province: z.array(z.string()).optional(),
+  partners: z.array(z.string()).optional(),
+  contribution: z.union([z.string(), z.number()]).optional(),
 });
 
 export type InsertConvention = z.infer<typeof insertConventionSchema>;
