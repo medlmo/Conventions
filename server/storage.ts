@@ -116,6 +116,7 @@ export class DatabaseStorage implements IStorage {
       ...c,
       province: c.province ? JSON.parse(c.province) : [],
       partners: c.partners ? JSON.parse(c.partners) : [],
+      attachments: c.attachments ? JSON.parse(c.attachments) : [],
     }));
   }
 
@@ -126,6 +127,7 @@ export class DatabaseStorage implements IStorage {
       ...c,
       province: c.province ? JSON.parse(c.province) : [],
       partners: c.partners ? JSON.parse(c.partners) : [],
+      attachments: c.attachments ? JSON.parse(c.attachments) : [],
     };
   }
 
@@ -136,6 +138,7 @@ export class DatabaseStorage implements IStorage {
         ...conventionData,
         province: conventionData.province ? JSON.stringify(conventionData.province) : null,
         partners: conventionData.partners ? JSON.stringify(conventionData.partners) : null,
+        attachments: conventionData.attachments ? JSON.stringify(conventionData.attachments) : null,
         createdBy,
       })
       .returning();
@@ -143,6 +146,7 @@ export class DatabaseStorage implements IStorage {
       ...convention,
       province: convention.province ? JSON.parse(convention.province) : [],
       partners: convention.partners ? JSON.parse(convention.partners) : [],
+      attachments: convention.attachments ? JSON.parse(convention.attachments) : [],
     };
   }
 
@@ -153,6 +157,7 @@ export class DatabaseStorage implements IStorage {
         ...updateData,
         province: updateData.province ? JSON.stringify(updateData.province) : null,
         partners: updateData.partners ? JSON.stringify(updateData.partners) : null,
+        attachments: updateData.attachments ? JSON.stringify(updateData.attachments) : null,
         updatedAt: new Date(),
       })
       .where(eq(conventions.id, id))
@@ -162,6 +167,7 @@ export class DatabaseStorage implements IStorage {
           ...convention,
           province: convention.province ? JSON.parse(convention.province) : [],
           partners: convention.partners ? JSON.parse(convention.partners) : [],
+          attachments: convention.attachments ? JSON.parse(convention.attachments) : [],
         }
       : undefined;
   }

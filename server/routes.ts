@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getSession, requireAuth, requireRole } from "./auth";
+import { upload, deleteFile } from "./upload";
 import { 
   insertConventionSchema, 
   loginSchema, 
@@ -9,6 +10,7 @@ import {
   UserRole 
 } from "@shared/schema";
 import { z } from "zod";
+import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware
@@ -259,7 +261,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // File upload routes
+  app.post("/api/upload", requireAuth, upload.array('files', 5), (req, res) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "لم يتم رفع أي ملفات" });
+      }
 
+      const uploadedFiles = files.map(file => ({
+        originalName: file.originalname,
+        filename: file.filename,
+        size: file.size,
+        mimetype: file.mimetype,
+        path: `/uploads/${file.filename}`
+      }));
+
+      res.json({ files: uploadedFiles });
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      res.status(500).json({ message: "خطأ في رفع الملفات" });
+    }
+  });
+
+  // Serve uploaded files
+  app.use('/uploads', requireAuth, (req, res, next) => {
+    const express = require('express');
+    express.static(path.join(process.cwd(), 'uploads'))(req, res, next);
+  });
+
+  // Delete uploaded file
+  app.delete("/api/upload/:filename", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), (req, res) => {
+    try {
+      const { filename } = req.params;
+      deleteFile(filename);
+      res.json({ message: "تم حذف الملف بنجاح" });
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      res.status(500).json({ message: "خطأ في حذف الملف" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

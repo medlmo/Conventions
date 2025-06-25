@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { soussMassaProvinces } from "@/lib/provinces";
 import { partnersList } from "@/lib/partners";
 import ReactSelect from 'react-select';
+import { useState, useRef } from "react";
+import { File, X, Upload } from "lucide-react";
 
 interface ConventionFormProps {
   open: boolean;
@@ -24,6 +26,9 @@ interface ConventionFormProps {
 
 export function ConventionForm({ open, onOpenChange, convention }: ConventionFormProps) {
   const { toast } = useToast();
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<InsertConvention>({
     resolver: zodResolver(insertConventionSchema),
@@ -42,6 +47,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       contribution: "",
       province: [],
       partners: [],
+      attachments: [],
     },
   });
 
@@ -91,11 +97,63 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
     },
   });
 
+  const handleFileUpload = async (files: FileList) => {
+    if (!files.length) return;
+    
+    setIsUploading(true);
+    const formData = new FormData();
+    Array.from(files).forEach(file => {
+      formData.append('files', file);
+    });
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) throw new Error('Upload failed');
+      
+      const result = await response.json();
+      const newFiles = result.files;
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+      
+      // Update form attachments
+      const currentAttachments = form.getValues('attachments') || [];
+      form.setValue('attachments', [...currentAttachments, ...newFiles.map(f => f.path)]);
+      
+      toast({
+        title: "تم رفع الملفات بنجاح",
+        description: `تم رفع ${newFiles.length} ملف`,
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في رفع الملفات",
+        description: "حدث خطأ أثناء رفع الملفات",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = uploadedFiles.filter((_, i) => i !== index);
+    setUploadedFiles(newFiles);
+    form.setValue('attachments', newFiles.map(f => f.path));
+  };
+
   const onSubmit = (data: InsertConvention) => {
+    // Include uploaded files in the submission
+    const submissionData = {
+      ...data,
+      attachments: uploadedFiles.map(f => f.path)
+    };
+    
     if (convention) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(submissionData);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(submissionData);
     }
   };
 
@@ -116,7 +174,13 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         contribution: convention.contribution || "",
         province: convention.province || [],
         partners: convention.partners || [],
+        attachments: convention.attachments || [],
       });
+      setUploadedFiles(convention.attachments?.map(path => ({ 
+        path, 
+        originalName: path.split('/').pop(),
+        size: 0 
+      })) || []);
     } else {
       form.reset({
         conventionNumber: "",
@@ -133,7 +197,9 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         contribution: "",
         province: [],
         partners: [],
+        attachments: [],
       });
+      setUploadedFiles([]);
     }
   }, [convention, form]);
 
@@ -424,6 +490,66 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                   </FormItem>
                 )}
               />
+
+              {/* File Upload Section */}
+              <div className="md:col-span-2">
+                <FormLabel>المرفقات</FormLabel>
+                <div className="mt-2 space-y-4">
+                  <div 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600">
+                      اضغط هنا لرفع الملفات أو اسحب الملفات إلى هنا
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, Word, Excel, أو الصور (حد أقصى 10 ميجابايت لكل ملف)
+                    </p>
+                  </div>
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                    className="hidden"
+                  />
+                  
+                  {isUploading && (
+                    <div className="text-center text-sm text-gray-600">
+                      جاري رفع الملفات...
+                    </div>
+                  )}
+                  
+                  {uploadedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-gray-700">الملفات المرفقة:</h4>
+                      {uploadedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                          <div className="flex items-center space-x-reverse space-x-2">
+                            <File className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm text-gray-700">{file.originalName}</span>
+                            <span className="text-xs text-gray-500">
+                              ({(file.size / 1024 / 1024).toFixed(2)} ميجابايت)
+                            </span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
             </div>
 
