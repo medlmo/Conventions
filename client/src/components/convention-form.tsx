@@ -143,14 +143,27 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
     form.setValue('attachments', newFiles.map(f => f.path));
   };
 
-  const downloadFile = (file: any) => {
-    // Create a link to download the file
-    const link = document.createElement('a');
-    link.href = file.path;
-    link.download = file.originalName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const downloadFile = async (file: any) => {
+    try {
+      const response = await fetch(file.path);
+      if (!response.ok) throw new Error('Failed to fetch file');
+      
+      const blob = await response.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = file.originalName || file.path.split('/').pop();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: "خطأ في التحميل",
+        description: "حدث خطأ أثناء تحميل الملف",
+        variant: "destructive",
+      });
+    }
   };
 
   const onSubmit = (data: InsertConvention) => {

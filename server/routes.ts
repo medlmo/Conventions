@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getSession, requireAuth, requireRole } from "./auth";
@@ -285,10 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Serve uploaded files
-  app.use('/uploads', requireAuth, (req, res, next) => {
-    const express = require('express');
-    express.static(path.join(process.cwd(), 'uploads'))(req, res, next);
-  });
+  app.use('/uploads', requireAuth, express.static(path.join(process.cwd(), 'uploads')));
 
   // Delete uploaded file
   app.delete("/api/upload/:filename", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), (req, res) => {

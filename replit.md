@@ -116,7 +116,8 @@ The application is configured for deployment on Replit with the following setup:
   - Secure file storage with multer middleware
   - Download functionality for attached files
   - File management in both form editing and convention viewing
-  - Added convention export feature in viewing modal (downloads as text file)
+  - Added convention export feature in viewing modal (downloads as Word document)
+  - Fixed file attachment download functionality with proper authentication
 - January 24, 2025: Added file upload functionality to convention forms
   - Implemented secure file upload with multer for PDF, Word, Excel, and image files
   - Added attachments field to database schema and storage operations
