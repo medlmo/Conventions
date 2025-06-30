@@ -143,10 +143,34 @@ export default function ConventionsPage() {
   };
 
   const exportToExcel = () => {
-    toast({
-      title: "تصدير البيانات",
-      description: "جاري تصدير البيانات إلى Excel...",
-    });
+    fetch('/api/conventions/export/excel', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+      credentials: 'include',
+    })
+      .then(response => {
+        if (!response.ok) throw new Error('Erreur lors de l\'export Excel');
+        return response.blob();
+      })
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'conventions.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(() => {
+        toast({
+          title: 'خطأ',
+          description: 'حدث خطأ أثناء تصدير البيانات إلى Excel',
+          variant: 'destructive',
+        });
+      });
   };
 
   const clearFilters = () => {
@@ -594,7 +618,7 @@ export default function ConventionsPage() {
                   className="text-green-600 hover:text-green-700"
                 >
                   <Download className="h-4 w-4 ml-2" />
-                  تحميل الاتفاقية
+                  تحميل بطاقة الاتفاقية
                 </Button>
               </DialogTitle>
             </DialogHeader>

@@ -298,181 +298,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "الاتفاقية غير موجودة" });
       }
 
-      // Create Word document using docx library
-      const { Document, Paragraph, TextRun, Packer } = await import('docx');
-      
+      // Format date in French with Western digits
+      const dateFr = new Date(convention.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      // Prepare table rows (label, value)
+      const fields = [
+        ['رقم الاتفاقية', convention.conventionNumber || 'غير محدد'],
+        ['التاريخ', dateFr],
+        ['السنة', convention.year || 'غير محدد'],
+        ['الدورة', convention.session || 'غير محدد'],
+        ['المجال', convention.domain || 'غير محدد'],
+        ['القطاع', convention.sector || 'غير محدد'],
+        ['رقم المقرر', convention.decisionNumber || 'غير محدد'],
+        ['الحالة', convention.status || 'غير محدد'],
+        ['الكلفة الإجمالية', convention.amount ? convention.amount.toLocaleString('fr-FR') + ' د.م' : 'غير محدد'],
+        ['مساهمة الجهة', convention.contribution ? convention.contribution.toLocaleString('fr-FR') + ' د.م' : 'غير محدد'],
+        ['صاحب المشروع', convention.contractor || 'غير محدد'],
+        [
+          'العمالة/الإقليم',
+          (convention.province && Array.isArray(convention.province) && convention.province.length > 0)
+            ? convention.province.join(', ')
+            : 'غير محدد',
+        ],
+        [
+          'الشركاء',
+          (convention.partners && Array.isArray(convention.partners) && convention.partners.length > 0)
+            ? convention.partners.join(', ')
+            : 'غير محدد',
+        ],
+      ];
+
+      const { Document, Paragraph, TextRun, Packer, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle } = await import('docx');
+
       const doc = new Document({
         sections: [{
           children: [
             new Paragraph({
-              children: [
-                new TextRun({
-                  text: "تفاصيل الاتفاقية",
-                  bold: true,
-                  size: 32,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `رقم الاتفاقية: ${convention.conventionNumber}`,
-                  size: 24,
-                }),
-              ],
+              alignment: AlignmentType.RIGHT,
+              bidirectional: true,
               spacing: { after: 200 },
-            }),
-            new Paragraph({
               children: [
                 new TextRun({
-                  text: `التاريخ: ${new Date(convention.date).toLocaleDateString('ar-EG')}`,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `السنة: ${convention.year || 'غير محدد'}`,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `الدورة: ${convention.session || 'غير محدد'}`,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `المجال: ${convention.domain || 'غير محدد'}`,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `القطاع: ${convention.sector || 'غير محدد'}`,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `رقم المقرر: ${convention.decisionNumber || 'غير محدد'}`,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `الحالة: ${convention.status}`,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "الاتفاقية:",
+                  text: 'الاتفاقية:',
                   bold: true,
                   size: 28,
+                  font: 'Arial',
                 }),
               ],
-              spacing: { after: 200 },
             }),
             new Paragraph({
+              alignment: AlignmentType.RIGHT,
+              bidirectional: true,
               children: [
                 new TextRun({
                   text: convention.description || 'غير محدد',
+                  font: 'Arial',
                   size: 24,
                 }),
               ],
               spacing: { after: 400 },
             }),
             new Paragraph({
+              alignment: AlignmentType.RIGHT,
+              bidirectional: true,
               children: [
                 new TextRun({
-                  text: `الكلفة الإجمالية: ${convention.amount.toLocaleString()} د.م`,
-                  size: 24,
+                  text: 'تفاصيل الاتفاقية',
+                  bold: true,
+                  size: 36,
+                  font: 'Arial',
                 }),
               ],
-              spacing: { after: 200 },
+              spacing: { after: 400 },
             }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `مساهمة الجهة: ${convention.contribution ? convention.contribution.toLocaleString() + ' د.م' : 'غير محدد'}`,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
+            new Table({
+              alignment: AlignmentType.RIGHT,
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: fields.map(([label, value]) =>
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      width: { size: 60, type: WidthType.PERCENTAGE },
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.RIGHT,
+                          bidirectional: true,
+                          children: [
+                            new TextRun({ text: String(value), font: 'Arial', size: 24 }),
+                          ],
+                        }),
+                      ],
+                    }),
+                    new TableCell({
+                      width: { size: 40, type: WidthType.PERCENTAGE },
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.RIGHT,
+                          bidirectional: true,
+                          children: [
+                            new TextRun({ text: String(label), bold: true, font: 'Arial', size: 24 }),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                  tableHeader: false,
+                })
+              ),
+              borders: {
+                top: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
+                bottom: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
+                left: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
+                right: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
+                insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
+                insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
+              },
             }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `صاحب المشروع: ${convention.contractor || 'غير محدد'}`,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            ...(convention.province && Array.isArray(convention.province) && convention.province.length > 0 ? [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `العمالة/الإقليم: ${convention.province.join(', ')}`,
-                    size: 24,
-                  }),
-                ],
-                spacing: { after: 200 },
-              })
-            ] : []),
-            ...(convention.partners && Array.isArray(convention.partners) && convention.partners.length > 0 ? [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `الشركاء: ${convention.partners.join(', ')}`,
-                    size: 24,
-                  }),
-                ],
-                spacing: { after: 200 },
-              })
-            ] : []),
-            ...(convention.attachments && Array.isArray(convention.attachments) && convention.attachments.length > 0 ? [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `عدد المرفقات: ${convention.attachments.length}`,
-                    size: 24,
-                  }),
-                ],
-                spacing: { after: 200 },
-              })
-            ] : []),
           ],
         }],
       });
 
       const buffer = await Packer.toBuffer(doc);
       
+      // Sanitize filename and support UTF-8
+      const safeConventionNumber = String(convention.conventionNumber).replace(/[^a-zA-Z0-9-_]/g, '_');
+      const asciiFallback = `convention_${safeConventionNumber}.docx`;
+      const utf8Filename = `اتفاقية_${safeConventionNumber}.docx`;
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', `attachment; filename="اتفاقية_${convention.conventionNumber}.docx"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(utf8Filename)}`);
       res.send(buffer);
     } catch (error) {
       console.error('Error generating Word document:', error);
@@ -489,6 +442,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting file:", error);
       res.status(500).json({ message: "خطأ في حذف الملف" });
+    }
+  });
+
+  // Export all conventions to Excel
+  app.get('/api/conventions/export/excel', requireAuth, async (req, res) => {
+    try {
+      const conventions = await storage.getAllConventions();
+      const { default: ExcelJS } = await import('exceljs');
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Conventions');
+
+      // Define columns
+      worksheet.columns = [
+        { header: 'Numéro', key: 'conventionNumber', width: 15 },
+        { header: 'Date', key: 'date', width: 15 },
+        { header: 'Année', key: 'year', width: 10 },
+        { header: 'Session', key: 'session', width: 12 },
+        { header: 'Domaine', key: 'domain', width: 15 },
+        { header: 'Secteur', key: 'sector', width: 15 },
+        { header: 'Numéro Décision', key: 'decisionNumber', width: 18 },
+        { header: 'Statut', key: 'status', width: 12 },
+        { header: 'Montant', key: 'amount', width: 15 },
+        { header: 'Contribution', key: 'contribution', width: 15 },
+        { header: 'Contractant', key: 'contractor', width: 20 },
+        { header: 'Provinces', key: 'province', width: 20 },
+        { header: 'Partenaires', key: 'partners', width: 20 },
+        { header: 'Description', key: 'description', width: 30 },
+      ];
+
+      // Add rows
+      conventions.forEach(c => {
+        worksheet.addRow({
+          conventionNumber: c.conventionNumber,
+          date: c.date ? new Date(c.date).toLocaleDateString('fr-FR') : '',
+          year: c.year,
+          session: c.session,
+          domain: c.domain,
+          sector: c.sector,
+          decisionNumber: c.decisionNumber,
+          status: c.status,
+          amount: c.amount,
+          contribution: c.contribution,
+          contractor: c.contractor,
+          province: Array.isArray(c.province) ? c.province.join(', ') : c.province,
+          partners: Array.isArray(c.partners) ? c.partners.join(', ') : c.partners,
+          description: c.description,
+        });
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename="conventions.xlsx"');
+      await workbook.xlsx.write(res);
+      res.end();
+    } catch (error) {
+      console.error('Erreur export Excel:', error);
+      res.status(500).json({ message: 'Erreur lors de l\'export Excel' });
     }
   });
 
