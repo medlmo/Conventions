@@ -148,32 +148,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get conventions statistics - All authenticated users can view stats
-  // IMPORTANT: This route must come BEFORE the /:id route to avoid conflicts
-  app.get("/api/conventions/stats", requireAuth, async (req, res) => {
+  // Statistiques globales conventions (dashboard)
+  app.get('/api/conventions/stats', requireAuth, async (req, res) => {
     try {
-      const allConventions = await storage.getAllConventions();
-      const total = allConventions.length;
-      const active = allConventions.filter(c => c.status === "نشطة").length;
-      const pending = allConventions.filter(c => c.status === "معلقة").length;
-      const progress = allConventions.filter(c => c.status === "قيد التنفيذ").length;
-      const completed = allConventions.filter(c => c.status === "مكتملة").length;
-      const totalValue = allConventions.reduce((sum, c) => {
-        const amount = parseFloat(c.amount || "0");
-        return sum + (isNaN(amount) ? 0 : amount);
-      }, 0);
-
-      res.json({
-        total,
-        active,
-        pending,
-        progress,
-        completed,
-        totalValue: totalValue.toLocaleString('en-US', { style: 'currency', currency: 'MAD' })
-      });
+      const conventions = await storage.getAllConventions();
+      const total = conventions.length;
+      const activated = conventions.filter(c => c.status === 'مفعلة').length;
+      const signature = conventions.filter(c => c.status === 'في طور التوقيع').length;
+      const visa = conventions.filter(c => c.status === 'في طور التأشير').length;
+      const visee = conventions.filter(c => c.status === 'مؤشرة').length;
+      const totalValue = conventions.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+      const totalValueFormatted = totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' });
+      res.json({ total, activated, signature, visa, visee, totalValue: totalValueFormatted });
     } catch (error) {
-      console.error("Error fetching stats:", error);
-      res.status(500).json({ message: "خطأ في استرجاع الإحصائيات" });
+      console.error('Erreur stats globales:', error);
+      res.status(500).json({ message: 'Erreur statistiques globales' });
     }
   });
 
@@ -498,6 +487,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Erreur export Excel:', error);
       res.status(500).json({ message: 'Erreur lors de l\'export Excel' });
+    }
+  });
+
+  // Statistiques : nombre de conventions par secteur
+  app.get('/api/conventions/stats/by-sector', requireAuth, async (req, res) => {
+    try {
+      const conventions = await storage.getAllConventions();
+      const sectorCounts = {};
+      conventions.forEach(c => {
+        const sector = c.sector || 'غير محدد';
+        sectorCounts[sector] = (sectorCounts[sector] || 0) + 1;
+      });
+      const result = Object.entries(sectorCounts).map(([sector, count]) => ({ sector, count }));
+      res.json(result);
+    } catch (error) {
+      console.error('Erreur stats by-sector:', error);
+      res.status(500).json({ message: 'Erreur statistiques secteur' });
+    }
+  });
+
+  // Statistiques : nombre de conventions par statut
+  app.get('/api/conventions/stats/by-status', requireAuth, async (req, res) => {
+    try {
+      const conventions = await storage.getAllConventions();
+      const statusCounts = {};
+      conventions.forEach(c => {
+        const status = c.status || 'غير محدد';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+      const result = Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
+      res.json(result);
+    } catch (error) {
+      console.error('Erreur stats by-status:', error);
+      res.status(500).json({ message: 'Erreur statistiques statut' });
+    }
+  });
+
+  // Statistiques : somme des montants par secteur
+  app.get('/api/conventions/stats/by-sector-cost', requireAuth, async (req, res) => {
+    try {
+      const conventions = await storage.getAllConventions();
+      const sectorAmounts = {};
+      conventions.forEach(c => {
+        const sector = c.sector || 'غير محدد';
+        const amount = Number(c.amount) || 0;
+        sectorAmounts[sector] = (sectorAmounts[sector] || 0) + amount;
+      });
+      const result = Object.entries(sectorAmounts).map(([sector, amount]) => ({ sector, amount }));
+      res.json(result);
+    } catch (error) {
+      console.error('Erreur stats by-sector-cost:', error);
+      res.status(500).json({ message: 'Erreur statistiques montant secteur' });
     }
   });
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { queryClient } from "@/lib/queryClient";
@@ -20,6 +20,7 @@ import { formatCurrency, formatDate, getStatusBadgeClass } from "@/lib/utils";
 import { getRoleDisplayName } from "@/lib/authUtils";
 import { File, Plus, Download, Search, Eye, Edit, Trash2, Bell, LogOut, Users, Settings, BarChart3 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 
 export default function ConventionsPage() {
   const { user, logout } = useAuth();
@@ -35,6 +36,9 @@ export default function ConventionsPage() {
   const [domainFilter, setDomainFilter] = useState("");
   const [sectorFilter, setSectorFilter] = useState("");
   const [viewingConvention, setViewingConvention] = useState<Convention | null>(null);
+  const [sectorStats, setSectorStats] = useState([]);
+  const [statusStats, setStatusStats] = useState([]);
+  const [sectorCostStats, setSectorCostStats] = useState([]);
 
   // Fetch conventions
   const { data: conventions = [], isLoading } = useQuery<Convention[]>({
@@ -45,6 +49,20 @@ export default function ConventionsPage() {
   const { data: stats } = useQuery({
     queryKey: ["/api/conventions/stats"],
   });
+
+  useEffect(() => {
+    fetch('/api/conventions/stats/by-sector', { credentials: 'include' })
+      .then(res => res.json())
+      .then(setSectorStats);
+    fetch('/api/conventions/stats/by-status', { credentials: 'include' })
+      .then(res => res.json())
+      .then(setStatusStats);
+    fetch('/api/conventions/stats/by-sector-cost', { credentials: 'include' })
+      .then(res => res.json())
+      .then(setSectorCostStats);
+  }, []);
+
+  const COLORS = ['#0088FE', '#FF8042', '#888888', '#FFD700', '#00C49F', '#FFBB28', '#FF4444', '#A28CFF', '#FFB6C1'];
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -84,8 +102,6 @@ export default function ConventionsPage() {
     
     return matchesSearch && matchesStatus && matchesDomain && matchesSector;
   });
-
-
 
   const handleAddNew = () => {
     if (!permissions.canCreateConvention) {
@@ -260,6 +276,55 @@ export default function ConventionsPage() {
               <p className="text-gray-600">عرض شامل لإحصائيات النظام</p>
             </div>
 
+            {/* Graphiques */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              {/* Pie Chart: Répartition par secteur */}
+              <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+                <h3 className="font-cairo font-bold text-lg mb-4">توزيع الاتفاقيات حسب القطاعات</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={sectorStats} dataKey="count" nameKey="sector" cx="50%" cy="50%" outerRadius={100} label>
+                      {sectorStats.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Donut Chart: Répartition par statut */}
+              <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+                <h3 className="font-cairo font-bold text-lg mb-4">توزيع الاتفاقيات حسب التفعيل</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={statusStats} dataKey="count" nameKey="status" cx="50%" cy="50%" innerRadius={60} outerRadius={100} label>
+                      {statusStats.map((entry, index) => (
+                        <Cell key={`cell-status-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Bar Chart: Montant par secteur */}
+            <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+              <h3 className="font-cairo font-bold text-lg mb-4">توزيع الاتفاقيات حسب الكلفة والقطاع</h3>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={sectorCostStats} layout="vertical">
+                  <XAxis type="number" tickFormatter={v => v.toLocaleString('fr-FR')} />
+                  <YAxis dataKey="sector" type="category" width={180} />
+                  <Bar dataKey="amount" fill="#0088FE" />
+                  <RechartsTooltip formatter={v => v.toLocaleString('fr-FR')} />
+                  <Legend />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-6">
               <Card className="overflow-hidden">
@@ -287,8 +352,8 @@ export default function ConventionsPage() {
                       </div>
                     </div>
                     <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">اتفاقيات نشطة</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.active || 0}</p>
+                      <p className="text-xs font-medium text-gray-600 truncate">مؤشرة</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.visee || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -303,8 +368,8 @@ export default function ConventionsPage() {
                       </div>
                     </div>
                     <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">اتفاقيات معلقة</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.pending || 0}</p>
+                      <p className="text-xs font-medium text-gray-600 truncate">في طور التأشير</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.visa || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -319,8 +384,8 @@ export default function ConventionsPage() {
                       </div>
                     </div>
                     <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">قيد التنفيذ</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.progress || 0}</p>
+                      <p className="text-xs font-medium text-gray-600 truncate">في طور التوقيع</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.signature || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -335,8 +400,8 @@ export default function ConventionsPage() {
                       </div>
                     </div>
                     <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">مكتملة</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.completed || 0}</p>
+                      <p className="text-xs font-medium text-gray-600 truncate">مفعلة</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.activated || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -358,8 +423,6 @@ export default function ConventionsPage() {
                 </CardContent>
               </Card>
             </div>
-
-
           </TabsContent>
 
           <TabsContent value="conventions" className="space-y-6">
@@ -407,6 +470,7 @@ export default function ConventionsPage() {
                     <SelectValue placeholder="جميع الحالات" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">جميع الحالات</SelectItem>
                     <SelectItem value="في طور التوقيع"> في طور التوقيع</SelectItem>
                     <SelectItem value="في طور التأشير">في طور التأشير</SelectItem>
                     <SelectItem value="مؤشرة">مؤشرة</SelectItem>
