@@ -558,203 +558,161 @@ export default function ConventionsPage() {
                   size="sm"
                   onClick={async () => {
                     try {
-                      // Create Word document using docx library
-                      const docx = await import('docx');
-                      const { Document, Paragraph, TextRun, Packer } = docx;
+                      // Import docx library dynamically
+                      const docxModule = await import('docx');
                       
-                      // Create paragraphs for the document
-                      const paragraphs = [
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: "تفاصيل الاتفاقية",
-                              bold: true,
-                              size: 32,
-                            }),
-                          ],
-                          spacing: { after: 400 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `رقم الاتفاقية: ${viewingConvention.conventionNumber}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `التاريخ: ${formatDate(viewingConvention.date)}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `السنة: ${viewingConvention.year || 'غير محدد'}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `الدورة: ${viewingConvention.session || 'غير محدد'}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `المجال: ${viewingConvention.domain || 'غير محدد'}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `القطاع: ${viewingConvention.sector || 'غير محدد'}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `رقم المقرر: ${viewingConvention.decisionNumber || 'غير محدد'}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `الحالة: ${viewingConvention.status}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 400 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: "الاتفاقية:",
-                              bold: true,
-                              size: 28,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: viewingConvention.description || 'غير محدد',
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 400 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `الكلفة الإجمالية: ${formatCurrency(viewingConvention.amount)}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `مساهمة الجهة: ${viewingConvention.contribution ? formatCurrency(viewingConvention.contribution) : 'غير محدد'}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `صاحب المشروع: ${viewingConvention.contractor || 'غير محدد'}`,
-                              size: 24,
-                            }),
-                          ],
-                          spacing: { after: 200 },
-                        }),
-                      ];
-
-                      // Add optional fields if they exist
-                      if (viewingConvention.province && viewingConvention.province.length > 0) {
-                        paragraphs.push(
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: `العمالة/الإقليم: ${viewingConvention.province.join(', ')}`,
-                                size: 24,
-                              }),
-                            ],
-                            spacing: { after: 200 },
-                          })
-                        );
-                      }
-
-                      if (viewingConvention.partners && viewingConvention.partners.length > 0) {
-                        paragraphs.push(
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: `الشركاء: ${viewingConvention.partners.join(', ')}`,
-                                size: 24,
-                              }),
-                            ],
-                            spacing: { after: 200 },
-                          })
-                        );
-                      }
-
-                      if (viewingConvention.attachments && viewingConvention.attachments.length > 0) {
-                        paragraphs.push(
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: `عدد المرفقات: ${viewingConvention.attachments.length}`,
-                                size: 24,
-                              }),
-                            ],
-                            spacing: { after: 200 },
-                          })
-                        );
-                      }
-
-                      const doc = new Document({
+                      // Create the document content
+                      const doc = new docxModule.Document({
                         sections: [{
-                          children: paragraphs,
+                          children: [
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: "تفاصيل الاتفاقية",
+                                  bold: true,
+                                  size: 32,
+                                }),
+                              ],
+                              spacing: { after: 400 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `رقم الاتفاقية: ${viewingConvention.conventionNumber}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `التاريخ: ${formatDate(viewingConvention.date)}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `السنة: ${viewingConvention.year || 'غير محدد'}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `الدورة: ${viewingConvention.session || 'غير محدد'}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `المجال: ${viewingConvention.domain || 'غير محدد'}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `القطاع: ${viewingConvention.sector || 'غير محدد'}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `رقم المقرر: ${viewingConvention.decisionNumber || 'غير محدد'}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `الحالة: ${viewingConvention.status}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 400 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: "الاتفاقية:",
+                                  bold: true,
+                                  size: 28,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: viewingConvention.description || 'غير محدد',
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 400 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `الكلفة الإجمالية: ${formatCurrency(viewingConvention.amount)}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `مساهمة الجهة: ${viewingConvention.contribution ? formatCurrency(viewingConvention.contribution) : 'غير محدد'}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                            new docxModule.Paragraph({
+                              children: [
+                                new docxModule.TextRun({
+                                  text: `صاحب المشروع: ${viewingConvention.contractor || 'غير محدد'}`,
+                                  size: 24,
+                                }),
+                              ],
+                              spacing: { after: 200 },
+                            }),
+                          ],
                         }],
                       });
 
-                      const buffer = await Packer.toBuffer(doc);
+                      // Generate the document
+                      const buffer = await docxModule.Packer.toBuffer(doc);
+                      
+                      // Create download link
                       const blob = new Blob([buffer], { 
                         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
                       });
                       
+                      const url = URL.createObjectURL(blob);
                       const link = document.createElement('a');
-                      link.href = URL.createObjectURL(blob);
+                      link.href = url;
                       link.download = `اتفاقية_${viewingConvention.conventionNumber}.docx`;
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
-                      URL.revokeObjectURL(link.href);
+                      URL.revokeObjectURL(url);
 
                       toast({
                         title: "تم التحميل بنجاح",
