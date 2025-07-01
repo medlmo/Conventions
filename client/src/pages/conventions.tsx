@@ -39,6 +39,7 @@ export default function ConventionsPage() {
   const [sectorStats, setSectorStats] = useState([]);
   const [statusStats, setStatusStats] = useState([]);
   const [sectorCostStats, setSectorCostStats] = useState([]);
+  const [programmeFilter, setProgrammeFilter] = useState("");
 
   // Fetch conventions
   const { data: conventions = [], isLoading } = useQuery<Convention[]>({
@@ -97,10 +98,10 @@ export default function ConventionsPage() {
     
     const matchesStatus = !statusFilter || statusFilter === "all" || convention.status === statusFilter;
     
-    const matchesDomain = !domainFilter || domainFilter === "all" || convention.domain === domainFilter;
     const matchesSector = !sectorFilter || sectorFilter === "all" || convention.sector === sectorFilter;
+    const matchesProgramme = !programmeFilter || programmeFilter === "all" || convention.programme === programmeFilter;
     
-    return matchesSearch && matchesStatus && matchesDomain && matchesSector;
+    return matchesSearch && matchesStatus && matchesSector && matchesProgramme;
   });
 
   const handleAddNew = () => {
@@ -194,6 +195,7 @@ export default function ConventionsPage() {
     setStatusFilter("all");
     setDomainFilter("all");
     setSectorFilter("all");
+    setProgrammeFilter("all");
   };
 
   return (
@@ -276,6 +278,101 @@ export default function ConventionsPage() {
               <p className="text-gray-600">عرض شامل لإحصائيات النظام</p>
             </div>
 
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-6">
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div className="h-5 w-5 bg-gray-600 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">إجمالي الاتفاقيات</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.total || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <div className="h-5 w-5 bg-green-600 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">مؤشرة</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.visee || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <div className="h-5 w-5 bg-yellow-600 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">في طور التأشير</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.visa || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <div className="h-5 w-5 bg-blue-600 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">في طور التوقيع</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.signature || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <div className="h-5 w-5 bg-purple-600 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">مفعلة</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.activated || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Total Value Card */}
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                        <span className="text-emerald-600 font-bold text-xs">د.م</span>
+                      </div>
+                    </div>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">إجمالي القيمة</p>
+                      <p className="text-sm font-cairo font-bold text-gray-900 truncate">{stats?.totalValue || "درهم 0.00"}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Graphiques */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
               {/* Pie Chart: Répartition par secteur */}
@@ -318,110 +415,11 @@ export default function ConventionsPage() {
                 <BarChart data={sectorCostStats} layout="vertical">
                   <XAxis type="number" tickFormatter={v => v.toLocaleString('fr-FR')} />
                   <YAxis dataKey="sector" type="category" width={180} />
-                  <Bar dataKey="amount" fill="#0088FE" />
+                  <Bar dataKey="الكلفة" fill="#0088FE" />
                   <RechartsTooltip formatter={v => v.toLocaleString('fr-FR')} />
                   <Legend />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-6">
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <div className="h-5 w-5 bg-gray-600 rounded-full"></div>
-                      </div>
-                    </div>
-                    <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">إجمالي الاتفاقيات</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.total || 0}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                        <div className="h-5 w-5 bg-green-600 rounded-full"></div>
-                      </div>
-                    </div>
-                    <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">مؤشرة</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.visee || 0}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                        <div className="h-5 w-5 bg-yellow-600 rounded-full"></div>
-                      </div>
-                    </div>
-                    <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">في طور التأشير</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.visa || 0}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <div className="h-5 w-5 bg-blue-600 rounded-full"></div>
-                      </div>
-                    </div>
-                    <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">في طور التوقيع</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.signature || 0}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <div className="h-5 w-5 bg-purple-600 rounded-full"></div>
-                      </div>
-                    </div>
-                    <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">مفعلة</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.activated || 0}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                        <span className="text-emerald-600 font-bold text-xs">د.م</span>
-                      </div>
-                    </div>
-                    <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">إجمالي القيمة</p>
-                      <p className="text-sm font-cairo font-bold text-gray-900 truncate">{stats?.totalValue || "درهم 0.00"}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </TabsContent>
 
@@ -480,34 +478,6 @@ export default function ConventionsPage() {
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">المجال</label>
-                <Select value={domainFilter} onValueChange={setDomainFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="جميع المجالات" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">جميع المجالات</SelectItem>
-                    <SelectItem value="السياحة">السياحة</SelectItem>
-                    <SelectItem value="التشغيل">التشغيل</SelectItem>
-                    <SelectItem value="الصحة">الصحة</SelectItem>
-                    <SelectItem value="الصناعة التقليدية">الصناعة التقليدية</SelectItem>
-                    <SelectItem value="الطرق">الطرق</SelectItem>
-                    <SelectItem value="الصيد البحري و تربية الأحياء البحرية">الصيد البحري و تربية الأحياء البحرية</SelectItem>
-                    <SelectItem value="الفلاحة">الفلاحة</SelectItem>
-                    <SelectItem value="اعداد التراب">اعداد التراب </SelectItem>
-                    <SelectItem value="التعليم">التعليم</SelectItem>
-                    <SelectItem value="التكوين المهني"> التكوين المهني </SelectItem>
-                    <SelectItem value="التأهيل الاجتماعي">التأهيل الاجتماعي</SelectItem>
-                    <SelectItem value="التنمية القروية">التنمية القروية</SelectItem>
-                    <SelectItem value="الرياضة">الرياضة</SelectItem>
-                    <SelectItem value="الحد من آثار الكوارث الطبيعية والفياضانات"> الحد من آثار الكوارث الطبيعية والفياضانات</SelectItem>
-                    <SelectItem value="التعاون الدولي">التعاون الدولي </SelectItem>
-                    <SelectItem value="التسريع الصناعي">التسريع الصناعي </SelectItem>
-                    <SelectItem value="احداث و تدبير المؤسسات الثقافية">احداث و تدبير المؤسسات الثقافية</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">القطاع</label>
                 <Select value={sectorFilter} onValueChange={setSectorFilter}>
                   <SelectTrigger>
@@ -519,6 +489,24 @@ export default function ConventionsPage() {
                     <SelectItem value="التنمية المجالية">التنمية المجالية</SelectItem>
                     <SelectItem value="الشراكة والتعاون الدولي">الشراكة والتعاون الدولي</SelectItem>
                     <SelectItem value="الشؤون الاجتماعية و الثقافية والرياضية">الشؤون الاجتماعية و الثقافية والرياضية</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">البرنامج</label>
+                <Select value={programmeFilter} onValueChange={setProgrammeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="جميع البرامج" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع البرامج</SelectItem>
+                    <SelectItem value="PDR">PDR</SelectItem>
+                    <SelectItem value="Hors PDR">Hors PDR</SelectItem>
+                    <SelectItem value="PDU">PDU</SelectItem>
+                    <SelectItem value="PNAM">PNAM</SelectItem>
+                    <SelectItem value="PRDTS">PRDTS</SelectItem>
+                    <SelectItem value="Contrat etat région">Contrat etat région</SelectItem>
+                    <SelectItem value="PAI">PAI</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -639,8 +627,8 @@ export default function ConventionsPage() {
         <Dialog open={!!viewingConvention} onOpenChange={() => setViewingConvention(null)}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="font-cairo flex items-center justify-between">
-                <span>تفاصيل الاتفاقية</span>
+              <DialogTitle className="font-cairo flex flex-col items-start justify-between">
+                <span className="text-base text-gray-700">تفاصيل الاتفاقية</span>
                 <Button
                   variant="outline"
                   size="sm"
@@ -688,6 +676,10 @@ export default function ConventionsPage() {
             </DialogHeader>
             
             <div className="space-y-6">
+              <div>
+                <h4 className="font-medium text-gray-700">الاتفاقية</h4>
+                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{viewingConvention.description}</p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-medium text-gray-700">رقم الاتفاقية</h4>
@@ -723,11 +715,12 @@ export default function ConventionsPage() {
                     {viewingConvention.status}
                   </Badge>
                 </div>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-gray-700 mb-2">الاتفاقية</h4>
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{viewingConvention.description}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <span className="block text-xs text-gray-500 mb-1">البرنامج</span>
+                    <span className="block font-cairo font-bold text-gray-800">{viewingConvention?.programme || 'غير محدد'}</span>
+                  </div>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

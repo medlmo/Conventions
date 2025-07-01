@@ -514,6 +514,33 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="programme"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>البرنامج</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر البرنامج" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="PDR">PDR</SelectItem>
+                        <SelectItem value="Hors PDR">Hors PDR</SelectItem>
+                        <SelectItem value="PDU">PDU</SelectItem>
+                        <SelectItem value="PNAM">PNAM</SelectItem>
+                        <SelectItem value="PRDTS">PRDTS</SelectItem>
+                        <SelectItem value="Contrat etat région">Contrat etat région</SelectItem>
+                        <SelectItem value="PAI">PAI</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* File Upload Section */}
               <div className="md:col-span-2">
                 <FormLabel>المرفقات</FormLabel>

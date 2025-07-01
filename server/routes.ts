@@ -315,6 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? convention.partners.join(', ')
             : 'غير محدد',
         ],
+        ['البرنامج', convention.programme || 'غير محدد'],
       ];
 
       const { Document, Paragraph, TextRun, Packer, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle } = await import('docx');
@@ -534,7 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const amount = Number(c.amount) || 0;
         sectorAmounts[sector] = (sectorAmounts[sector] || 0) + amount;
       });
-      const result = Object.entries(sectorAmounts).map(([sector, amount]) => ({ sector, amount }));
+      const result = Object.entries(sectorAmounts).map(([sector, amount]) => ({ sector, الكلفة: amount }));
       res.json(result);
     } catch (error) {
       console.error('Erreur stats by-sector-cost:', error);

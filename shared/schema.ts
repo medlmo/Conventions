@@ -55,6 +55,7 @@ export const conventions = pgTable("conventions", {
   province: text("province"),
   partners: text("partners"),
   attachments: text("attachments"), // JSON string for file paths/URLs
+  programme: text("programme"),
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -71,6 +72,7 @@ export const insertConventionSchema = createInsertSchema(conventions).omit({
   partners: z.array(z.string()).optional(),
   contribution: z.union([z.string(), z.number()]).optional(),
   attachments: z.array(z.string()).optional(),
+  programme: z.string().optional(),
 });
 
 export type InsertConvention = z.infer<typeof insertConventionSchema>;
