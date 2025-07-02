@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DeleteConfirmation } from "@/components/delete-confirmation";
 import { getRoleDisplayName, getRoleBadgeClass } from "@/lib/authUtils";
-import { Plus, Trash2, UserPlus } from "lucide-react";
+import { Plus, Trash2, UserPlus, Edit2 } from "lucide-react";
 
 interface User {
   id: string;
@@ -34,6 +34,8 @@ export function UserManagement() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const form = useForm<CreateUser>({
     resolver: zodResolver(createUserSchema),
@@ -98,6 +100,42 @@ export function UserManagement() {
     },
   });
 
+  // Edit user form
+  const editForm = useForm<Omit<User, "createdAt" | "isActive"> & { isActive: string }>({
+    defaultValues: {
+      id: "",
+      username: "",
+      role: UserRole.VIEWER,
+      firstName: "",
+      lastName: "",
+      email: "",
+      isActive: "true",
+    },
+  });
+
+  // Update user mutation
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await apiRequest("PUT", `/api/users/${data.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "تم تحديث المستخدم بنجاح",
+        description: "تم حفظ التعديلات.",
+      });
+      setIsEditOpen(false);
+      setEditingUser(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || "حدث خطأ أثناء تحديث المستخدم",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: CreateUser) => {
     createMutation.mutate(data);
   };
@@ -111,6 +149,21 @@ export function UserManagement() {
     if (deletingUserId) {
       deleteMutation.mutate(deletingUserId);
     }
+  };
+
+  const openEditModal = (user: User) => {
+    setEditingUser(user);
+    editForm.reset({
+      ...user,
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      email: user.email ?? "",
+    });
+    setIsEditOpen(true);
+  };
+
+  const onEditSubmit = (data: any) => {
+    updateMutation.mutate(data);
   };
 
   return (
@@ -298,14 +351,26 @@ export function UserManagement() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(user.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditModal(user)}
+                              className="text-blue-600 hover:text-blue-700"
+                              title="تعديل المستخدم"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(user.id)}
+                              className="text-red-600 hover:text-red-700"
+                              title="حذف المستخدم"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -324,6 +389,124 @@ export function UserManagement() {
         onConfirm={confirmDelete}
         isLoading={deleteMutation.isPending}
       />
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-cairo">تعديل المستخدم</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>اسم المستخدم</FormLabel>
+                    <FormControl>
+                      <Input placeholder="أدخل اسم المستخدم" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الاسم الأول</FormLabel>
+                      <FormControl>
+                        <Input placeholder="الاسم الأول" {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>اسم العائلة</FormLabel>
+                      <FormControl>
+                        <Input placeholder="اسم العائلة" {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>البريد الإلكتروني</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="البريد الإلكتروني" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الدور</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر دور المستخدم" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={UserRole.ADMIN}>مدير النظام</SelectItem>
+                        <SelectItem value={UserRole.EDITOR}>محرر</SelectItem>
+                        <SelectItem value={UserRole.VIEWER}>مشاهد</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الحالة</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر حالة المستخدم" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="true">نشط</SelectItem>
+                        <SelectItem value="false">غير نشط</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end space-x-reverse space-x-3 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
+                  إلغاء
+                </Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? "جاري الحفظ..." : "حفظ التعديلات"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

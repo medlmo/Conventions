@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import LoginPage from "@/pages/login";
 import ConventionsPage from "@/pages/conventions";
 import NotFound from "@/pages/not-found";
+import logoSoussMassa from "./assets/logo-soussmassa.png";
 
 function AuthenticatedApp() {
   return (

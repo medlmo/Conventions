@@ -21,6 +21,7 @@ import { getRoleDisplayName } from "@/lib/authUtils";
 import { File, Plus, Download, Search, Eye, Edit, Trash2, Bell, LogOut, Users, Settings, BarChart3 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import logoSoussMassa from "../assets/logo-soussmassa.png";
 
 export default function ConventionsPage() {
   const { user, logout } = useAuth();
@@ -201,18 +202,21 @@ export default function ConventionsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white shadow-sm border-b border-gray-200 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-16 relative">
+            {/* Titre à gauche */}
             <div className="flex items-center space-x-reverse space-x-4">
-              <div className="flex-shrink-0">
-                <h1 className="text-xl font-cairo font-bold text-primary">
-                  <File className="inline ml-2 h-6 w-6" />
-                  نظام إدارة الاتفاقيات
-                </h1>
-              </div>
+              <h1 className="text-lg md:text-xl font-cairo font-bold text-primary whitespace-nowrap">
+                <File className="inline ml-2 h-6 w-6" />
+                نظام إدارة الاتفاقيات
+              </h1>
             </div>
-            
+            {/* Logo centré */}
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+              <img src={logoSoussMassa} alt="Logo Région Souss Massa" className="h-10 w-auto" style={{maxWidth: 48}} />
+            </div>
+            {/* Actions utilisateur/logout à droite */}
             <div className="flex items-center space-x-reverse space-x-4">
               <Button variant="ghost" size="icon">
                 <Bell className="h-5 w-5" />
@@ -429,7 +433,7 @@ export default function ConventionsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-cairo font-bold text-gray-900 mb-2">إدارة الاتفاقيات</h2>
-                  <p className="text-gray-600">إدارة وتتبع جميع الاتفاقيات والعقود في النظام</p>
+                  <p className="text-gray-600">إدارة وتتبع جميع الاتفاقيات في النظام</p>
                 </div>
                 <div className="mt-4 sm:mt-0 flex space-x-reverse space-x-3">
                   {permissions.canCreateConvention && (
@@ -517,7 +521,7 @@ export default function ConventionsPage() {
                 تطبيق البحث
               </Button>
               <Button variant="ghost" onClick={clearFilters}>
-                مسح الفلاتر
+                مسح الفلتر
               </Button>
             </div>
           </CardContent>
