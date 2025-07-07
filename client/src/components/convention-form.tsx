@@ -122,7 +122,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       
       // Update form attachments
       const currentAttachments = form.getValues('attachments') || [];
-      form.setValue('attachments', [...currentAttachments, ...newFiles.map(f => f.path)]);
+      form.setValue('attachments', [...currentAttachments, ...newFiles.map((f: any) => f.path)]);
       
       toast({
         title: "تم رفع الملفات بنجاح",
@@ -197,17 +197,23 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         decisionNumber: convention.decisionNumber || "",
         contractor: convention.contractor,
         contribution: convention.contribution || "",
-        province: convention.province || [],
-        partners: convention.partners || [],
-        attachments: convention.attachments || [],
+        province: typeof convention.province === "string" ? JSON.parse(convention.province) : (convention.province || []),
+        partners: typeof convention.partners === "string" ? JSON.parse(convention.partners) : (convention.partners || []),
+        attachments: typeof convention.attachments === "string" ? JSON.parse(convention.attachments) : (convention.attachments || []),
         delegatedProjectOwner: convention.delegatedProjectOwner || "",
         executionType: convention.executionType || "",
+        programme: convention.programme || "",
       });
-      setUploadedFiles(convention.attachments?.map(path => ({ 
-        path, 
-        originalName: path.split('/').pop(),
-        size: 0 
-      })) || []);
+      setUploadedFiles(
+        (typeof convention.attachments === "string"
+          ? JSON.parse(convention.attachments)
+          : convention.attachments || []
+        ).map((path: string) => ({
+          path,
+          originalName: path.split('/').pop(),
+          size: 0
+        }))
+      );
     } else {
       form.reset({
         conventionNumber: "",
