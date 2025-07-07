@@ -365,44 +365,6 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
 
               <FormField
                 control={form.control}
-                name="domain"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>المجال</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر المجال" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                      <SelectItem value="السياحة">السياحة</SelectItem>
-                        <SelectItem value="التشغيل">التشغيل</SelectItem>
-                        <SelectItem value="دعم الاستثمار و المقاولات">دعم الاستثمار و المقاولات</SelectItem>
-                        <SelectItem value="الصحة">الصحة</SelectItem>
-                        <SelectItem value="الصناعة التقليدية">الصناعة التقليدية</SelectItem>
-                        <SelectItem value="الطرق">الطرق</SelectItem>
-                        <SelectItem value="الصيد البحري و تربية الأحياء البحرية">الصيد البحري و تربية الأحياء البحرية</SelectItem>
-                        <SelectItem value="الفلاحة">الفلاحة</SelectItem>
-                        <SelectItem value="اعداد التراب">اعداد التراب </SelectItem>
-                        <SelectItem value="التعليم">التعليم</SelectItem>
-                        <SelectItem value="التكوين المهني"> التكوين المهني </SelectItem>
-                        <SelectItem value="التأهيل الاجتماعي">التأهيل الاجتماعي</SelectItem>
-                        <SelectItem value="التنمية القروية">التنمية القروية</SelectItem>
-                        <SelectItem value="الرياضة">الرياضة</SelectItem>
-                        <SelectItem value="الحد من آثار الكوارث الطبيعية والفياضانات"> الحد من آثار الكوارث الطبيعية والفياضانات</SelectItem>
-                        <SelectItem value="التعاون الدولي">التعاون الدولي </SelectItem>
-                        <SelectItem value="التسريع الصناعي">التسريع الصناعي </SelectItem>
-                        <SelectItem value="احداث و تدبير المؤسسات الثقافية">احداث و تدبير المؤسسات الثقافية</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="sector"
                 render={({ field }) => (
                   <FormItem>
@@ -414,11 +376,48 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                      <SelectItem value="التنمية الإقتصادية">التنمية الإقتصادية</SelectItem>
+                        <SelectItem value="السياحة">السياحة</SelectItem>
+                        <SelectItem value="التشغيل">التشغيل</SelectItem>
+                        <SelectItem value="دعم الاستثمار و المقاولات">دعم الاستثمار و المقاولات</SelectItem>
+                        <SelectItem value="الصحة">الصحة</SelectItem>
+                        <SelectItem value="الصناعة التقليدية">الصناعة التقليدية</SelectItem>
+                        <SelectItem value="الطرق">الطرق</SelectItem>
+                        <SelectItem value="الصيد البحري و تربية الأحياء البحرية">الصيد البحري و تربية الأحياء البحرية</SelectItem>
+                        <SelectItem value="الفلاحة">الفلاحة</SelectItem>
+                        <SelectItem value="اعداد التراب ">اعداد التراب </SelectItem>
+                        <SelectItem value="التعليم">التعليم</SelectItem>
+                        <SelectItem value="التكوين المهني"> التكوين المهني </SelectItem>
+                        <SelectItem value="التأهيل الاجتماعي">التأهيل الاجتماعي</SelectItem>
+                        <SelectItem value="التنمية القروية">التنمية القروية</SelectItem>
+                        <SelectItem value="الرياضة">الرياضة</SelectItem>
+                        <SelectItem value="الحد من آثار الكوارث الطبيعية والفياضانات"> الحد من آثار الكوارث الطبيعية والفياضانات</SelectItem>
+                        <SelectItem value="التعاون الدولي ">التعاون الدولي </SelectItem>
+                        <SelectItem value="التسريع الصناعي ">التسريع الصناعي </SelectItem>
+                        <SelectItem value="احداث و تدبير المؤسسات الثقافية">احداث و تدبير المؤسسات الثقافية</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="domain"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>المجال</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر المجال" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="التنمية الإقتصادية">التنمية الإقتصادية</SelectItem>
                         <SelectItem value="التنمية المجالية">التنمية المجالية</SelectItem>
                         <SelectItem value="الشراكة والتعاون الدولي">الشراكة والتعاون الدولي</SelectItem>
                         <SelectItem value="الشؤون الاجتماعية و الثقافية والرياضية">الشؤون الاجتماعية و الثقافية والرياضية</SelectItem>
-                        
                       </SelectContent>
                     </Select>
                     <FormMessage />
