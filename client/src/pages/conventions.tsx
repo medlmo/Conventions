@@ -41,6 +41,8 @@ export default function ConventionsPage() {
   const [statusStats, setStatusStats] = useState([]);
   const [sectorCostStats, setSectorCostStats] = useState([]);
   const [programmeFilter, setProgrammeFilter] = useState("");
+  const [domainStats, setDomainStats] = useState([]);
+  const [provinceStats, setProvinceStats] = useState([]);
 
   // Fetch conventions
   const { data: conventions = [], isLoading } = useQuery<Convention[]>({
@@ -62,6 +64,12 @@ export default function ConventionsPage() {
     fetch('/api/conventions/stats/by-sector-cost', { credentials: 'include' })
       .then(res => res.json())
       .then(setSectorCostStats);
+    fetch('/api/conventions/stats/by-domain', { credentials: 'include' })
+      .then(res => res.json())
+      .then(setDomainStats);
+    fetch('/api/conventions/stats/by-province', { credentials: 'include' })
+      .then(res => res.json())
+      .then(setProvinceStats);
   }, []);
 
   const COLORS = ['#0088FE', '#FF8042', '#888888', '#FFD700', '#00C49F', '#FFBB28', '#FF4444', '#A28CFF', '#FFB6C1'];
@@ -400,6 +408,38 @@ export default function ConventionsPage() {
                     <Pie data={statusStats} dataKey="count" nameKey="status" cx="50%" cy="50%" innerRadius={60} outerRadius={100} label>
                       {statusStats.map((entry, index) => (
                         <Cell key={`cell-status-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Pie Chart: Répartition par المجال */}
+              <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+                <h3 className="font-cairo font-bold text-lg mb-4">توزيع الاتفاقيات حسب المجال</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={domainStats} dataKey="count" nameKey="domain" cx="50%" cy="50%" outerRadius={100} label>
+                      {domainStats.map((entry, index) => (
+                        <Cell key={`cell-domain-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Pie Chart: Répartition par العمالة/الإقليم */}
+              <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+                <h3 className="font-cairo font-bold text-lg mb-4">توزيع الاتفاقيات حسب العمالات و الأقاليم</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={provinceStats} dataKey="count" nameKey="province" cx="50%" cy="50%" outerRadius={100} label>
+                      {provinceStats.map((entry, index) => (
+                        <Cell key={`cell-province-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <RechartsTooltip />

@@ -529,7 +529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/conventions/stats/by-sector', requireAuth, async (req, res) => {
     try {
       const conventions = await storage.getAllConventions();
-      const sectorCounts = {};
+      const sectorCounts: Record<string, number> = {};
       conventions.forEach(c => {
         const sector = c.sector || 'غير محدد';
         sectorCounts[sector] = (sectorCounts[sector] || 0) + 1;
@@ -546,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/conventions/stats/by-status', requireAuth, async (req, res) => {
     try {
       const conventions = await storage.getAllConventions();
-      const statusCounts = {};
+      const statusCounts: Record<string, number> = {};
       conventions.forEach(c => {
         const status = c.status || 'غير محدد';
         statusCounts[status] = (statusCounts[status] || 0) + 1;
@@ -563,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/conventions/stats/by-sector-cost', requireAuth, async (req, res) => {
     try {
       const conventions = await storage.getAllConventions();
-      const sectorAmounts = {};
+      const sectorAmounts: Record<string, number> = {};
       conventions.forEach(c => {
         const sector = c.sector || 'غير محدد';
         const amount = Number(c.amount) || 0;
@@ -574,6 +574,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Erreur stats by-sector-cost:', error);
       res.status(500).json({ message: 'Erreur statistiques montant secteur' });
+    }
+  });
+
+  // Statistiques : nombre de conventions par domaine
+  app.get('/api/conventions/stats/by-domain', requireAuth, async (req, res) => {
+    try {
+      const conventions = await storage.getAllConventions();
+      const domainCounts: Record<string, number> = {};
+      conventions.forEach(c => {
+        const domain = c.domain || 'غير محدد';
+        domainCounts[domain] = (domainCounts[domain] || 0) + 1;
+      });
+      const result = Object.entries(domainCounts).map(([domain, count]) => ({ domain, count }));
+      res.json(result);
+    } catch (error) {
+      console.error('Erreur stats by-domain:', error);
+      res.status(500).json({ message: 'Erreur statistiques المجال' });
+    }
+  });
+
+  // Statistiques : nombre de conventions par العمالة/الإقليم (province)
+  app.get('/api/conventions/stats/by-province', requireAuth, async (req, res) => {
+    try {
+      const conventions = await storage.getAllConventions();
+      const provinceCounts: Record<string, number> = {};
+      conventions.forEach(c => {
+        let provinces = c.province || [];
+        if (typeof provinces === 'string') {
+          try {
+            provinces = JSON.parse(provinces);
+          } catch {
+            provinces = provinces.split(',').map((p: string) => p.trim());
+          }
+        }
+        if (!Array.isArray(provinces)) provinces = [String(provinces)];
+        (provinces as string[]).forEach((prov: string) => {
+          if (!prov) return;
+          provinceCounts[prov] = (provinceCounts[prov] || 0) + 1;
+        });
+      });
+      const result = Object.entries(provinceCounts).map(([province, count]) => ({ province, count }));
+      res.json(result);
+    } catch (error) {
+      console.error('Erreur stats by-province:', error);
+      res.status(500).json({ message: 'Erreur statistiques العمالة/الإقليم' });
     }
   });
 
