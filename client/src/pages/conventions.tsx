@@ -44,6 +44,7 @@ export default function ConventionsPage() {
   const [domainStats, setDomainStats] = useState([]);
   const [provinceStats, setProvinceStats] = useState([]);
   const [yearStats, setYearStats] = useState([]);
+  const [programmeStats, setProgrammeStats] = useState([]);
 
   // Fetch conventions
   const { data: conventions = [], isLoading } = useQuery<Convention[]>({
@@ -74,6 +75,9 @@ export default function ConventionsPage() {
     fetch('/api/conventions/stats/by-year', { credentials: 'include' })
       .then(res => res.json())
       .then(setYearStats);
+    fetch('/api/conventions/stats/by-programme', { credentials: 'include' })
+      .then(res => res.json())
+      .then(setProgrammeStats);
   }, []);
 
   const COLORS = ['#0088FE', '#FF8042', '#888888', '#FFD700', '#00C49F', '#FFBB28', '#FF4444', '#A28CFF', '#FFB6C1'];
@@ -452,7 +456,7 @@ export default function ConventionsPage() {
                 </ResponsiveContainer>
               </div>
 
-              {/* Bar Chart: Répartition par السنة */}
+              {/* Pie Chart: Répartition par السنة */}
               <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
                 <h3 className="font-cairo font-bold text-lg mb-4">توزيع الاتفاقيات حسب السنة</h3>
                 <ResponsiveContainer width="100%" height={300}>
@@ -463,6 +467,22 @@ export default function ConventionsPage() {
                     <RechartsTooltip />
                     <Legend />
                   </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Pie Chart: Répartition par البرنامج */}
+              <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+                <h3 className="font-cairo font-bold text-lg mb-4">توزيع الاتفاقيات حسب البرنامج</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={programmeStats} dataKey="count" nameKey="programme" cx="50%" cy="50%" outerRadius={100} label>
+                      {programmeStats.map((entry, index) => (
+                        <Cell key={`cell-programme-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                    <Legend />
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -499,7 +519,7 @@ export default function ConventionsPage() {
                   )}
                   <Button onClick={exportToExcel} variant="secondary" className="bg-green-600 hover:bg-green-700 text-white mr-6">
                     <Download className="ml-2 h-4 w-4" />
-                    تصدير إلى Excel
+                    Excel تصدير إلى
                   </Button>
                 </div>
               </div>

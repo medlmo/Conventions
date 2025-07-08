@@ -645,6 +645,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Statistiques : nombre de conventions par programme
+  app.get('/api/conventions/stats/by-programme', requireAuth, async (req, res) => {
+    try {
+      const conventions = await storage.getAllConventions();
+      const programmeCounts: Record<string, number> = {};
+      conventions.forEach(c => {
+        const programme = c.programme || 'غير محدد';
+        programmeCounts[programme] = (programmeCounts[programme] || 0) + 1;
+      });
+      const result = Object.entries(programmeCounts).map(([programme, count]) => ({ programme, count }));
+      res.json(result);
+    } catch (error) {
+      console.error('Erreur stats by-programme:', error);
+      res.status(500).json({ message: 'Erreur statistiques البرنامج' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
