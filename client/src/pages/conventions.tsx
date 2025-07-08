@@ -43,6 +43,7 @@ export default function ConventionsPage() {
   const [programmeFilter, setProgrammeFilter] = useState("");
   const [domainStats, setDomainStats] = useState([]);
   const [provinceStats, setProvinceStats] = useState([]);
+  const [yearStats, setYearStats] = useState([]);
 
   // Fetch conventions
   const { data: conventions = [], isLoading } = useQuery<Convention[]>({
@@ -70,6 +71,9 @@ export default function ConventionsPage() {
     fetch('/api/conventions/stats/by-province', { credentials: 'include' })
       .then(res => res.json())
       .then(setProvinceStats);
+    fetch('/api/conventions/stats/by-year', { credentials: 'include' })
+      .then(res => res.json())
+      .then(setYearStats);
   }, []);
 
   const COLORS = ['#0088FE', '#FF8042', '#888888', '#FFD700', '#00C49F', '#FFBB28', '#FF4444', '#A28CFF', '#FFB6C1'];
@@ -447,6 +451,20 @@ export default function ConventionsPage() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
+
+              {/* Bar Chart: Répartition par السنة */}
+              <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+                <h3 className="font-cairo font-bold text-lg mb-4">توزيع الاتفاقيات حسب السنة</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={yearStats} layout="vertical">
+                    <XAxis type="number" allowDecimals={false} />
+                    <YAxis dataKey="year" type="category" width={80} />
+                    <Bar dataKey="العدد" fill="#0088FE" />
+                    <RechartsTooltip />
+                    <Legend />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
             {/* Bar Chart: Montant par secteur */}
@@ -472,14 +490,14 @@ export default function ConventionsPage() {
                   <h2 className="text-2xl font-cairo font-bold text-gray-900 mb-2">إدارة الاتفاقيات</h2>
                   <p className="text-gray-600">إدارة وتتبع جميع الاتفاقيات في النظام</p>
                 </div>
-                <div className="mt-4 sm:mt-0 flex space-x-reverse space-x-3">
+                <div className="mt-4 sm:mt-0 flex space-x-6">
                   {permissions.canCreateConvention && (
                     <Button onClick={handleAddNew} className="bg-primary hover:bg-primary/90">
                       <Plus className="ml-2 h-4 w-4" />
                       إضافة اتفاقية جديدة
                     </Button>
                   )}
-                  <Button onClick={exportToExcel} variant="secondary" className="bg-green-600 hover:bg-green-700 text-white">
+                  <Button onClick={exportToExcel} variant="secondary" className="bg-green-600 hover:bg-green-700 text-white mr-6">
                     <Download className="ml-2 h-4 w-4" />
                     تصدير إلى Excel
                   </Button>

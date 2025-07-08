@@ -628,6 +628,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Statistiques : nombre de conventions par année
+  app.get('/api/conventions/stats/by-year', requireAuth, async (req, res) => {
+    try {
+      const conventions = await storage.getAllConventions();
+      const yearCounts: Record<string, number> = {};
+      conventions.forEach(c => {
+        const year = c.year || 'غير محدد';
+        yearCounts[year] = (yearCounts[year] || 0) + 1;
+      });
+      const result = Object.entries(yearCounts).map(([year, count]) => ({ year, العدد:count }));
+      res.json(result);
+    } catch (error) {
+      console.error('Erreur stats by-year:', error);
+      res.status(500).json({ message: 'Erreur statistiques السنة' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
