@@ -331,6 +331,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ['صاحب المشروع', convention.contractor || 'غير محدد'],
         ['صاحب المشروع المنتدب', convention.delegatedProjectOwner || 'غير محدد'],
         ['نوعية التنفيذ', convention.executionType || 'غير محدد'],
+        ["سريان الإتفاقية", convention.validity || "غير محدد"],
+        ["الاختصاص", convention.jurisdiction || "غير محدد"],
         [
           'العمالة/الإقليم',
           (convention.province && Array.isArray(convention.province) && convention.province.length > 0)
@@ -486,6 +488,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { header: 'صاحب المشروع', key: 'contractor', width: 20 },
         { header: 'صاحب المشروع المنتدب', key: 'delegatedProjectOwner', width: 20 },
         { header: 'نوعية التنفيذ', key: 'executionType', width: 18 },
+        { header: 'سريان الإتفاقية', key: 'validity', width: 18 },
+        { header: 'الاختصاص', key: 'jurisdiction', width: 12 },
         { header: 'البرنامج', key: 'programme', width: 18 },
         { header: 'العمالة/الإقليم', key: 'province', width: 20 },
         { header: 'الشركاء', key: 'partners', width: 20 },
@@ -512,6 +516,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           province: Array.isArray(c.province) ? c.province.join(', ') : c.province,
           partners: Array.isArray(c.partners) ? c.partners.join(', ') : c.partners,
           description: c.description,
+          validity: c.validity,
+          jurisdiction: c.jurisdiction,
         });
       });
 

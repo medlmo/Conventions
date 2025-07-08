@@ -50,6 +50,8 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       attachments: [],
       delegatedProjectOwner: "",
       executionType: "",
+      validity: "",
+      jurisdiction: undefined,
     },
   });
 
@@ -203,6 +205,8 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         delegatedProjectOwner: convention.delegatedProjectOwner || "",
         executionType: convention.executionType || "",
         programme: convention.programme || "",
+        validity: convention.validity || "",
+        jurisdiction: (convention.jurisdiction as "منقول" | "ذاتي" | "مشترك") || undefined,
       });
       setUploadedFiles(
         (typeof convention.attachments === "string"
@@ -233,6 +237,8 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         attachments: [],
         delegatedProjectOwner: "",
         executionType: "",
+        validity: "",
+        jurisdiction: undefined,
       });
       setUploadedFiles([]);
     }
@@ -502,6 +508,48 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Champ سريان الإتفاقية */}
+              <FormField
+                control={form.control}
+                name="validity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>سريان الإتفاقية</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="سريان الإتفاقية"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Champ الاختصاص */}
+              <FormField
+                control={form.control}
+                name="jurisdiction"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الاختصاص</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر الاختصاص" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="منقول">منقول</SelectItem>
+                        <SelectItem value="ذاتي">ذاتي</SelectItem>
+                        <SelectItem value="مشترك">مشترك</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

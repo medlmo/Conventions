@@ -58,6 +58,8 @@ export const conventions = pgTable("conventions", {
   programme: text("programme"),
   executionType: text("execution_type"), // نوعية التنفيذ
   delegatedProjectOwner: text("delegated_project_owner"), // صاحب المشروع المنتدب
+  validity: text("validity"), // سريان الإتفاقية
+  jurisdiction: text("jurisdiction"), // الاختصاص
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -77,6 +79,8 @@ export const insertConventionSchema = createInsertSchema(conventions).omit({
   programme: z.string().optional(),
   executionType: z.string().optional(), // نوعية التنفيذ
   delegatedProjectOwner: z.string().optional(), // صاحب المشروع المنتدب
+  validity: z.string().optional(), // سريان الإتفاقية
+  jurisdiction: z.enum(["منقول", "ذاتي", "مشترك"]).optional(), // الاختصاص
 });
 
 export type InsertConvention = z.infer<typeof insertConventionSchema>;

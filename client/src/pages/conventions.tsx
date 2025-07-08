@@ -801,6 +801,14 @@ export default function ConventionsPage() {
                   <h4 className="font-medium text-gray-700">نوعية التنفيذ</h4>
                   <p className="text-gray-900">{viewingConvention.executionType || 'غير محدد'}</p>
                 </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">سريان الإتفاقية</h4>
+                  <p className="text-gray-900">{viewingConvention.validity || "غير محدد"}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">الاختصاص</h4>
+                  <p className="text-gray-900">{viewingConvention.jurisdiction || "غير محدد"}</p>
+                </div>
               </div>
               
               {viewingConvention.province && viewingConvention.province.length > 0 && (
