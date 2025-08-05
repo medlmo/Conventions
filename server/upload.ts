@@ -53,9 +53,36 @@ export const upload = multer({
 // Helper function to delete uploaded files
 export const deleteFile = (filePath: string): void => {
   try {
-    const fullPath = path.join(uploadsDir, filePath);
+    // Validation de sécurité contre Path Traversal
+    if (!filePath || typeof filePath !== 'string') {
+      console.error('Invalid file path provided');
+      return;
+    }
+
+    // Nettoyer le chemin et vérifier qu'il ne contient pas de séquences dangereuses
+    const normalizedPath = path.normalize(filePath);
+    
+    // Vérifier que le chemin ne contient pas de séquences de navigation
+    if (normalizedPath.includes('..') || normalizedPath.startsWith('/') || normalizedPath.startsWith('\\')) {
+      console.error('Path traversal attempt detected:', filePath);
+      return;
+    }
+
+    // Vérifier que le chemin final est bien dans le dossier uploads
+    const fullPath = path.resolve(uploadsDir, normalizedPath);
+    const uploadsDirResolved = path.resolve(uploadsDir);
+    
+    if (!fullPath.startsWith(uploadsDirResolved)) {
+      console.error('Path traversal attempt detected - file outside uploads directory:', filePath);
+      return;
+    }
+
+    // Vérifier que le fichier existe avant de le supprimer
     if (fs.existsSync(fullPath)) {
       fs.unlinkSync(fullPath);
+      console.log('File deleted successfully:', filePath);
+    } else {
+      console.warn('File not found for deletion:', filePath);
     }
   } catch (error) {
     console.error('Error deleting file:', error);

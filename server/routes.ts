@@ -278,11 +278,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // File upload routes
-  app.post("/api/upload", requireAuth, upload.array('files', 5), (req, res) => {
+  app.post("/api/upload", requireAuth, (req, res, next) => {
+    upload.array('files', 5)(req, res, (err: any) => {
+      if (err) {
+        console.error("Multer error:", err);
+        
+        // Gestion spécifique de l'erreur Multer "File too large"
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ 
+            message: "الملف كبير جداً. الحد الأقصى هو 10 ميجابايت.",
+            error: "FILE_TOO_LARGE"
+          });
+        }
+        
+        // Gestion des autres erreurs Multer
+        if (err.name === 'MulterError') {
+          switch (err.code) {
+            case 'LIMIT_FILE_COUNT':
+              return res.status(400).json({ 
+                message: "عدد الملفات كبير جداً. الحد الأقصى هو 5 ملفات.",
+                error: "TOO_MANY_FILES"
+              });
+            case 'LIMIT_UNEXPECTED_FILE':
+              return res.status(400).json({ 
+                message: "نوع الملف غير متوقع.",
+                error: "UNEXPECTED_FILE"
+              });
+            default:
+              return res.status(400).json({ 
+                message: "خطأ في رفع الملفات.",
+                error: "UPLOAD_ERROR"
+              });
+          }
+        }
+        
+        // Gestion des erreurs générales
+        return res.status(500).json({ message: "خطأ في رفع الملفات" });
+      }
+      
+      // Si pas d'erreur, continuer avec le traitement normal
+      next();
+    });
+  }, async (req, res) => {
     try {
       const files = req.files as Express.Multer.File[];
       if (!files || files.length === 0) {
         return res.status(400).json({ message: "لم يتم رفع أي ملفات" });
+      }
+
+      // Validation de la taille des fichiers côté serveur
+      const maxFileSize = 10 * 1024 * 1024; // 10MB en bytes
+      const oversizedFiles: string[] = [];
+
+      for (const file of files) {
+        if (file.size > maxFileSize) {
+          oversizedFiles.push(file.originalname);
+          // Supprimer le fichier trop volumineux
+          const { deleteFile } = await import('./upload');
+          deleteFile(file.filename);
+        }
+      }
+
+      // Si des fichiers sont trop volumineux, retourner une erreur
+      if (oversizedFiles.length > 0) {
+        const fileList = oversizedFiles.join(', ');
+        return res.status(400).json({ 
+          message: `الملفات التالية كبيرة جداً (الحد الأقصى 10 ميجابايت): ${fileList}`,
+          oversizedFiles 
+        });
       }
 
       const uploadedFiles = files.map(file => ({

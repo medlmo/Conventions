@@ -42,7 +42,47 @@ export async function setupVite(app: Express, server: Server) {
 
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
+    let url = req.originalUrl;
+
+    // Sanitize the URL to prevent XSS attacks
+    try {
+      // Validate and sanitize the URL
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'Invalid URL' });
+      }
+
+      // Remove any potential script injections from the URL
+      url = url.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      url = url.replace(/javascript:/gi, '');
+      url = url.replace(/on\w+\s*=/gi, '');
+      url = url.replace(/data:text\/html/gi, '');
+      url = url.replace(/vbscript:/gi, '');
+      url = url.replace(/onload/gi, '');
+      url = url.replace(/onerror/gi, '');
+      url = url.replace(/onclick/gi, '');
+      url = url.replace(/onmouseover/gi, '');
+      url = url.replace(/onfocus/gi, '');
+      url = url.replace(/onblur/gi, '');
+
+      // Ensure the URL starts with a safe character
+      if (!url.startsWith('/') && !url.startsWith('http://') && !url.startsWith('https://')) {
+        url = '/' + url;
+      }
+
+      // Limit URL length to prevent DoS attacks
+      if (url.length > 2048) {
+        return res.status(414).json({ error: 'URL too long' });
+      }
+
+      // Log suspicious URLs for monitoring
+      if (url.includes('<') || url.includes('>') || url.includes('"') || url.includes("'")) {
+        log(`Suspicious URL detected: ${url}`, 'security');
+      }
+
+    } catch (error) {
+      log(`Error sanitizing URL: ${error}`, 'security');
+      return res.status(400).json({ error: 'Invalid URL format' });
+    }
 
     try {
       const clientTemplate = path.resolve(
