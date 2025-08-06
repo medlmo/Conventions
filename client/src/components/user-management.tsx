@@ -319,7 +319,7 @@ export function UserManagement() {
                     <TableHead className="text-right">البريد الإلكتروني</TableHead>
                     <TableHead className="text-right">الدور</TableHead>
                     <TableHead className="text-right">الحالة</TableHead>
-                    <TableHead className="text-right">الإجراءات</TableHead>
+                    <TableHead className="text-center">الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

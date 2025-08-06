@@ -260,7 +260,7 @@ export default function ConventionsPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-[80%] mx-auto py-8">
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className={`grid w-full ${permissions.canManageUsers ? 'grid-cols-3' : 'grid-cols-2'}`}>
@@ -358,8 +358,8 @@ export default function ConventionsPage() {
                       </div>
                     </div>
                     <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">مفعلة</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.activated || 0}</p>
+                      <p className="text-xs font-medium text-gray-600 truncate">موقعة</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.signed || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -513,7 +513,7 @@ export default function ConventionsPage() {
                     <SelectItem value="في طور التوقيع"> في طور التوقيع</SelectItem>
                     <SelectItem value="في طور التأشير">في طور التأشير</SelectItem>
                     <SelectItem value="مؤشرة">مؤشرة</SelectItem>
-                    <SelectItem value="مفعلة">مفعلة</SelectItem>
+                    <SelectItem value="موقعة">موقعة</SelectItem>
                     <SelectItem value="غير مفعلة">غير مفعلة</SelectItem>
                   </SelectContent>
                 </Select>
@@ -601,7 +601,7 @@ export default function ConventionsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-right">الإجراءات</TableHead>
+                      <TableHead className="text-center">الإجراءات</TableHead>
                       <TableHead className="text-right">القطاع</TableHead>
                       <TableHead className="text-right">الكلفة الاجمالية</TableHead>
                       <TableHead className="text-right">الاتفاقية</TableHead>

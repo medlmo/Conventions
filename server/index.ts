@@ -1,10 +1,53 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
 
 const app = express();
+
+  // Security middleware - Helmet
+  app.use(helmet({
+    // Désactiver l'en-tête X-Powered-By
+    hidePoweredBy: true,
+    // Configuration CSP pour la sécurité
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    // Désactiver le sniffing de type MIME
+    noSniff: true,
+    // Forcer HTTPS en production
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true
+    },
+    // Empêcher le clicjacking
+    frameguard: {
+      action: 'deny'
+    },
+    // Désactiver XSS Protection (remplacé par CSP)
+    xssFilter: false,
+    // Désactiver IE XSS Protection
+    ieNoOpen: true,
+    // Référer Policy
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+  }));
+
+// Désactiver explicitement l'en-tête X-Powered-By
+app.disable('x-powered-by');
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

@@ -179,13 +179,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const conventions = await storage.getAllConventions();
       const total = conventions.length;
-      const activated = conventions.filter(c => c.status === 'مفعلة').length;
+      const signed = conventions.filter(c => c.status === 'موقعة').length;
       const signature = conventions.filter(c => c.status === 'في طور التوقيع').length;
       const visa = conventions.filter(c => c.status === 'في طور التأشير').length;
       const visee = conventions.filter(c => c.status === 'مؤشرة').length;
       const totalValue = conventions.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
       const totalValueFormatted = totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' });
-      res.json({ total, activated, signature, visa, visee, totalValue: totalValueFormatted });
+      res.json({ total, signed, signature, visa, visee, totalValue: totalValueFormatted });
     } catch (error) {
       console.error('Erreur stats globales:', error);
       res.status(500).json({ message: 'Erreur statistiques globales' });

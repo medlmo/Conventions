@@ -612,7 +612,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                           <SelectItem value="في طور التوقيع">في طور التوقيع</SelectItem>
                           <SelectItem value="في طور التأشير">في طور التأشير</SelectItem>
                           <SelectItem value="مؤشرة">مؤشرة</SelectItem>
-                          <SelectItem value="مفعلة">مفعلة</SelectItem>
+                          <SelectItem value="موقعة">موقعة</SelectItem>
                           <SelectItem value="غير مفعلة">غير مفعلة</SelectItem>
                         </SelectContent>
                       </Select>
