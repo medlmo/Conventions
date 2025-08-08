@@ -109,8 +109,9 @@ export default function ConventionsPage() {
     
     const matchesSector = !sectorFilter || sectorFilter === "all" || convention.sector === sectorFilter;
     const matchesProgramme = !programmeFilter || programmeFilter === "all" || convention.programme === programmeFilter;
+    const matchesDomain = !domainFilter || domainFilter === "all" || convention.domain === domainFilter;
     
-    return matchesSearch && matchesStatus && matchesSector && matchesProgramme;
+    return matchesSearch && matchesStatus && matchesSector && matchesProgramme && matchesDomain;
   });
 
   const handleAddNew = () => {
@@ -493,7 +494,7 @@ export default function ConventionsPage() {
             <CardTitle className="text-lg font-cairo">البحث والتصفية</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">البحث العام</label>
                 <Input
@@ -545,6 +546,21 @@ export default function ConventionsPage() {
                     <SelectItem value="التسريع الصناعي ">التسريع الصناعي </SelectItem>
                     <SelectItem value="احداث و تدبير المؤسسات الثقافية">احداث و تدبير المؤسسات الثقافية</SelectItem>
                   </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">المجال</label>
+                <Select value={domainFilter} onValueChange={setDomainFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="جميع المجالات" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع المجالات</SelectItem>
+                    <SelectItem value="التنمية الإقتصادية">التنمية الإقتصادية</SelectItem>
+                    <SelectItem value="التنمية المجالية">التنمية المجالية</SelectItem>
+                    <SelectItem value="الشراكة والتعاون الدولي">الشراكة والتعاون الدولي</SelectItem>
+                    <SelectItem value="الشؤون الاجتماعية و الثقافية والرياضية">الشؤون الاجتماعية و الثقافية والرياضية</SelectItem>
+                </SelectContent>
                 </Select>
               </div>
               <div>
@@ -603,6 +619,7 @@ export default function ConventionsPage() {
                     <TableRow>
                       <TableHead className="text-center">الإجراءات</TableHead>
                       <TableHead className="text-right">القطاع</TableHead>
+                      <TableHead className="text-right">المجال</TableHead>
                       <TableHead className="text-right">الكلفة الاجمالية</TableHead>
                       <TableHead className="text-right">الاتفاقية</TableHead>
                       <TableHead className="text-right">الدورة</TableHead>
@@ -612,7 +629,7 @@ export default function ConventionsPage() {
                   <TableBody>
                     {filteredConventions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">
+                        <TableCell colSpan={7} className="text-center py-8">
                           <p className="text-gray-500">لا توجد اتفاقيات للعرض</p>
                         </TableCell>
                       </TableRow>
@@ -637,6 +654,7 @@ export default function ConventionsPage() {
                             </div>
                           </TableCell>
                           <TableCell>{convention.sector || "غير محدد"}</TableCell>
+                          <TableCell>{convention.domain || "غير محدد"}</TableCell>
                           <TableCell className="font-medium">{formatCurrency(convention.amount)}</TableCell>
                           <TableCell className="max-w-xs truncate">{convention.description}</TableCell>
                           <TableCell>{convention.session}</TableCell>
