@@ -17,6 +17,14 @@ import { partnersList } from "@/lib/partners";
 import ReactSelect from 'react-select';
 import { useState, useRef } from "react";
 import { File, X, Upload, Download } from "lucide-react";
+import { saveAs } from "file-saver";
+
+// Sanitize filename to avoid special characters and potential injection vectors
+function sanitizeFileName(name: string): string {
+  // Autoriser lettres/chiffres/espaces/.-_/caractères arabes ; remplacer le reste par _
+  const safe = name.replace(/[^\w\u0600-\u06FF\-\.\s]/g, "_").trim();
+  return safe.length > 200 ? safe.slice(0, 200) : safe;
+}
 
 interface ConventionFormProps {
   open: boolean;
@@ -153,13 +161,9 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       if (!response.ok) throw new Error('Failed to fetch file');
       
       const blob = await response.blob();
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = file.originalName || file.path.split('/').pop();
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
+      const suggested = file.originalName || file.path.split('/').pop() || 'file';
+      const fname = sanitizeFileName(suggested);
+      saveAs(blob, fname);
     } catch (error) {
       console.error('Error downloading file:', error);
       toast({
@@ -190,7 +194,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         conventionNumber: convention.conventionNumber,
         date: convention.date,
         description: convention.description,
-        amount: convention.amount,
+        amount: (convention.amount as any) ?? "",
         status: convention.status,
         year: convention.year || "",
         session: convention.session || "",
@@ -198,7 +202,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         sector: convention.sector || "",
         decisionNumber: convention.decisionNumber || "",
         contractor: convention.contractor,
-        contribution: convention.contribution || "",
+        contribution: (convention.contribution as any) ?? "",
         province: typeof convention.province === "string" ? JSON.parse(convention.province) : (convention.province || []),
         partners: typeof convention.partners === "string" ? JSON.parse(convention.partners) : (convention.partners || []),
         attachments: typeof convention.attachments === "string" ? JSON.parse(convention.attachments) : (convention.attachments || []),

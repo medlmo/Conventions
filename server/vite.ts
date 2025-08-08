@@ -5,6 +5,7 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
+import rateLimit from "express-rate-limit";
 
 const viteLogger = createLogger();
 
@@ -40,49 +41,35 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
-    let url = req.originalUrl;
-
-    // Sanitize the URL to prevent XSS attacks
-    try {
-      // Validate and sanitize the URL
-      if (!url || typeof url !== 'string') {
-        return res.status(400).json({ error: 'Invalid URL' });
-      }
-
-      // Remove any potential script injections from the URL
-      url = url.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-      url = url.replace(/javascript:/gi, '');
-      url = url.replace(/on\w+\s*=/gi, '');
-      url = url.replace(/data:text\/html/gi, '');
-      url = url.replace(/vbscript:/gi, '');
-      url = url.replace(/onload/gi, '');
-      url = url.replace(/onerror/gi, '');
-      url = url.replace(/onclick/gi, '');
-      url = url.replace(/onmouseover/gi, '');
-      url = url.replace(/onfocus/gi, '');
-      url = url.replace(/onblur/gi, '');
-
-      // Ensure the URL starts with a safe character
-      if (!url.startsWith('/') && !url.startsWith('http://') && !url.startsWith('https://')) {
-        url = '/' + url;
-      }
-
-      // Limit URL length to prevent DoS attacks
-      if (url.length > 2048) {
-        return res.status(414).json({ error: 'URL too long' });
-      }
-
-      // Log suspicious URLs for monitoring
-      if (url.includes('<') || url.includes('>') || url.includes('"') || url.includes("'")) {
-        log(`Suspicious URL detected: ${url}`, 'security');
-      }
-
-    } catch (error) {
-      log(`Error sanitizing URL: ${error}`, 'security');
-      return res.status(400).json({ error: 'Invalid URL format' });
+  // Simple in-memory cache for index.html based on mtime
+  let cachedTemplate: string | null = null;
+  let cachedMtimeMs = 0;
+  async function loadTemplate(clientTemplate: string): Promise<string> {
+    const stat = await fs.promises.stat(clientTemplate);
+    if (!cachedTemplate || stat.mtimeMs !== cachedMtimeMs) {
+      cachedTemplate = await fs.promises.readFile(clientTemplate, "utf-8");
+      cachedMtimeMs = stat.mtimeMs;
     }
+    return cachedTemplate;
+  }
+
+  // Rate limiter for the dev catch-all route (limits per IP)
+  const transformLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  // Concurrency limiter for transformIndexHtml
+  let activeTransforms = 0;
+  const MAX_TRANSFORMS = 5;
+
+  app.use(vite.middlewares);
+  app.use("*", transformLimiter, async (req, res, next) => {
+    // Whitelist-only: only allow root or /index.html for transformIndexHtml
+    const pathOnly = req.path;
+    const safeUrl = pathOnly === "/index.html" ? "/index.html" : "/";
 
     try {
       const clientTemplate = path.resolve(
@@ -92,14 +79,29 @@ export async function setupVite(app: Express, server: Server) {
         "index.html",
       );
 
-      // always reload the index.html file from disk incase it changes
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      // load cached template (reload only when mtime changed)
+      let template = await loadTemplate(clientTemplate);
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      // Throttle concurrent transforms
+      if (activeTransforms >= MAX_TRANSFORMS) {
+        return res.status(429).json({ error: 'Too many concurrent requests' });
+      }
+      activeTransforms++;
+      try {
+        // Timeout transform to avoid resource hogging
+        const page = await Promise.race([
+          vite.transformIndexHtml(safeUrl, template),
+          new Promise<string>((_, reject) =>
+            setTimeout(() => reject(new Error('Transform timeout')), 3000)
+          ),
+        ]);
+        res.status(200).set({ "Content-Type": "text/html" }).end(page as string);
+      } finally {
+        activeTransforms--;
+      }
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);
