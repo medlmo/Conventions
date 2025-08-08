@@ -12,6 +12,7 @@ import {
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
+import { sql } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -111,7 +112,15 @@ export class DatabaseStorage implements IStorage {
 
   // Convention operations  
   async getAllConventions(): Promise<Convention[]> {
-    const rows = await db.select().from(conventions).orderBy(conventions.createdAt);
+    const rows = await db
+      .select()
+      .from(conventions)
+      .orderBy(
+        // Trier d'abord par année (partie après le '/') en ordre décroissant
+        sql`NULLIF(split_part(${conventions.conventionNumber}, '/', 2), '')::int DESC`,
+        // Puis par numéro (partie avant le '/') en ordre décroissant
+        sql`NULLIF(split_part(${conventions.conventionNumber}, '/', 1), '')::int DESC`
+      );
     return rows.map(c => ({
       ...c,
       province: c.province ? JSON.parse(c.province) : [],
@@ -136,6 +145,14 @@ export class DatabaseStorage implements IStorage {
       .insert(conventions)
       .values({
         ...conventionData,
+        amount:
+          conventionData.amount !== undefined && conventionData.amount !== null && conventionData.amount !== ""
+            ? String(conventionData.amount)
+            : null,
+        contribution:
+          conventionData.contribution !== undefined && conventionData.contribution !== null && conventionData.contribution !== ""
+            ? String(conventionData.contribution)
+            : null,
         province: conventionData.province ? JSON.stringify(conventionData.province) : null,
         partners: conventionData.partners ? JSON.stringify(conventionData.partners) : null,
         attachments: conventionData.attachments ? JSON.stringify(conventionData.attachments) : null,
@@ -155,6 +172,14 @@ export class DatabaseStorage implements IStorage {
       .update(conventions)
       .set({
         ...updateData,
+        amount:
+          updateData.amount !== undefined && updateData.amount !== null && updateData.amount !== ""
+            ? String(updateData.amount)
+            : null,
+        contribution:
+          updateData.contribution !== undefined && updateData.contribution !== null && updateData.contribution !== ""
+            ? String(updateData.contribution)
+            : null,
         province: updateData.province ? JSON.stringify(updateData.province) : null,
         partners: updateData.partners ? JSON.stringify(updateData.partners) : null,
         attachments: updateData.attachments ? JSON.stringify(updateData.attachments) : null,
@@ -185,7 +210,7 @@ export class DatabaseStorage implements IStorage {
       convention.conventionNumber.toLowerCase().includes(lowerQuery) ||
       convention.description.toLowerCase().includes(lowerQuery) ||
       convention.contractor.toLowerCase().includes(lowerQuery) ||
-      convention.amount.toString().includes(lowerQuery)
+      (convention.amount != null && convention.amount.toString().includes(lowerQuery))
     );
   }
 

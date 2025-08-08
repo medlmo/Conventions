@@ -43,7 +43,7 @@ export const conventions = pgTable("conventions", {
   conventionNumber: text("convention_number").notNull().unique(),
   date: text("date").notNull(),
   description: text("description").notNull(),
-  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }),
   status: text("status").notNull(),
   year: text("year").notNull(),
   session: text("session").notNull(),
@@ -74,7 +74,14 @@ export const insertConventionSchema = createInsertSchema(conventions).omit({
 }).extend({
   province: z.array(z.string()).optional(),
   partners: z.array(z.string()).optional(),
-  contribution: z.union([z.string(), z.number()]).optional(),
+  amount: z.preprocess(
+    (val) => (val === null || val === "" ? undefined : val),
+    z.union([z.string(), z.number()]).optional()
+  ),
+  contribution: z.preprocess(
+    (val) => (val === null || val === "" ? undefined : val),
+    z.union([z.string(), z.number()]).optional()
+  ),
   attachments: z.array(z.string()).optional(),
   programme: z.string().optional(),
   executionType: z.string().optional(), // نوعية التنفيذ
