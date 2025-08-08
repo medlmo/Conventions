@@ -19,9 +19,17 @@ import { UserManagement } from "@/components/user-management";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "@/lib/utils";
 import { getRoleDisplayName } from "@/lib/authUtils";
 import { File, Plus, Download, Search, Eye, Edit, Trash2, LogOut, Users, Settings, BarChart3 } from "lucide-react";
+import { saveAs } from "file-saver";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import logoSoussMassa from "../assets/logo-soussmassa.png";
+
+// Sanitize filename to avoid special characters and potential injection vectors
+function sanitizeFileName(name: string): string {
+  // Autoriser lettres/chiffres/espaces/.-_/caractères arabes ; remplacer le reste par _
+  const safe = name.replace(/[^\w\u0600-\u06FF\-\.\s]/g, "_").trim();
+  return safe.length > 200 ? safe.slice(0, 200) : safe;
+}
 
 export default function ConventionsPage() {
   const { user, logout } = useAuth();
@@ -182,14 +190,7 @@ export default function ConventionsPage() {
         return response.blob();
       })
       .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'conventions.xlsx';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
+        saveAs(blob, 'conventions.xlsx');
       })
       .catch(() => {
         toast({
@@ -535,7 +536,7 @@ export default function ConventionsPage() {
                     <SelectItem value="الطرق">الطرق</SelectItem>
                     <SelectItem value="الصيد البحري و تربية الأحياء البحرية">الصيد البحري و تربية الأحياء البحرية</SelectItem>
                     <SelectItem value="الفلاحة">الفلاحة</SelectItem>
-                    <SelectItem value="اعداد التراب ">اعداد التراب </SelectItem>
+                    <SelectItem value=" اعداد التراب و النقل "> اعداد التراب و النقل </SelectItem>
                     <SelectItem value="التعليم">التعليم</SelectItem>
                     <SelectItem value="التكوين المهني"> التكوين المهني </SelectItem>
                     <SelectItem value="التأهيل الاجتماعي">التأهيل الاجتماعي</SelectItem>
@@ -718,14 +719,8 @@ export default function ConventionsPage() {
                       }
 
                       const blob = await response.blob();
-                      const url = URL.createObjectURL(blob);
-                      const link = document.createElement('a');
-                      link.href = url;
-                      link.download = `اتفاقية_${viewingConvention.conventionNumber}.docx`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      URL.revokeObjectURL(url);
+                      const fname = sanitizeFileName(`اتفاقية_${viewingConvention.conventionNumber}.docx`);
+                      saveAs(blob, fname);
 
                       toast({
                         title: "تم التحميل بنجاح",
@@ -864,13 +859,9 @@ export default function ConventionsPage() {
                               if (!response.ok) throw new Error('Failed to fetch file');
                               
                               const blob = await response.blob();
-                              const link = document.createElement('a');
-                              link.href = URL.createObjectURL(blob);
-                              link.download = attachment.split('/').pop() || 'file';
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              URL.revokeObjectURL(link.href);
+                              const suggested = attachment.split('/').pop() || 'file';
+                              const fname = sanitizeFileName(suggested);
+                              saveAs(blob, fname);
                             } catch (error) {
                               console.error('Error downloading file:', error);
                               toast({

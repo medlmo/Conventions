@@ -390,7 +390,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         <SelectItem value="الطرق">الطرق</SelectItem>
                         <SelectItem value="الصيد البحري و تربية الأحياء البحرية">الصيد البحري و تربية الأحياء البحرية</SelectItem>
                         <SelectItem value="الفلاحة">الفلاحة</SelectItem>
-                        <SelectItem value="اعداد التراب ">اعداد التراب </SelectItem>
+                        <SelectItem value=" اعداد التراب و النقل "> اعداد التراب و النقل </SelectItem>
                         <SelectItem value="التعليم">التعليم</SelectItem>
                         <SelectItem value="التكوين المهني"> التكوين المهني </SelectItem>
                         <SelectItem value="التأهيل الاجتماعي">التأهيل الاجتماعي</SelectItem>
