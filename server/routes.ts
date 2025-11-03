@@ -8,7 +8,8 @@ import {
   insertConventionSchema, 
   loginSchema, 
   createUserSchema,
-  UserRole 
+  UserRole,
+  insertFinancialContributionSchema
 } from "@shared/schema";
 import { z } from "zod";
 import path from "path";
@@ -722,6 +723,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Erreur stats by-programme:', error);
       res.status(500).json({ message: 'Erreur statistiques البرنامج' });
+    }
+  });
+
+  // Financial contributions routes
+  app.get("/api/conventions/:conventionId/financial-contributions", requireAuth, async (req, res) => {
+    try {
+      const { conventionId } = req.params;
+      const contributions = await storage.getFinancialContributionsByConvention(parseInt(conventionId));
+      res.json(contributions);
+    } catch (error) {
+      console.error("Error fetching financial contributions:", error);
+      res.status(500).json({ message: "خطأ في استرجاع المساهمات المالية" });
+    }
+  });
+
+  app.post("/api/conventions/:conventionId/financial-contributions", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), async (req, res) => {
+    try {
+      const { conventionId } = req.params;
+      const contributionData = insertFinancialContributionSchema.parse({
+        ...req.body,
+        conventionId: parseInt(conventionId)
+      });
+      const contribution = await storage.createFinancialContribution(contributionData);
+      res.status(201).json(contribution);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      console.error("Error creating financial contribution:", error);
+      res.status(500).json({ message: "خطأ في إنشاء المساهمة المالية" });
+    }
+  });
+
+  app.put("/api/financial-contributions/:id", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const contributionData = insertFinancialContributionSchema.partial().parse(req.body);
+      const contribution = await storage.updateFinancialContribution(parseInt(id), contributionData);
+      
+      if (!contribution) {
+        return res.status(404).json({ message: "المساهمة المالية غير موجودة" });
+      }
+      
+      res.json(contribution);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      console.error("Error updating financial contribution:", error);
+      res.status(500).json({ message: "خطأ في تحديث المساهمة المالية" });
+    }
+  });
+
+  app.delete("/api/financial-contributions/:id", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteFinancialContribution(parseInt(id));
+      res.json({ message: "تم حذف المساهمة المالية بنجاح" });
+    } catch (error) {
+      console.error("Error deleting financial contribution:", error);
+      res.status(500).json({ message: "خطأ في حذف المساهمة المالية" });
     }
   });
 

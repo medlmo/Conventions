@@ -97,6 +97,43 @@ export const insertConventionSchema = createInsertSchema(conventions).omit({
 export type InsertConvention = z.infer<typeof insertConventionSchema>;
 export type Convention = typeof conventions.$inferSelect;
 
+// Financial contributions table for tracking partner payments
+export const financialContributions = pgTable("financial_contributions", {
+  id: serial("id").primaryKey(),
+  conventionId: serial("convention_id").references(() => conventions.id, { onDelete: "cascade" }).notNull(),
+  partnerName: text("partner_name").notNull(),
+  year: text("year").notNull(),
+  amountExpected: decimal("amount_expected", { precision: 12, scale: 2 }),
+  amountPaid: decimal("amount_paid", { precision: 12, scale: 2 }),
+  paymentDate: text("payment_date"),
+  isPaid: text("is_paid").notNull().default("false"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Schema for financial contribution operations
+export const insertFinancialContributionSchema = createInsertSchema(financialContributions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  amountExpected: z.preprocess(
+    (val) => (val === null || val === "" ? undefined : val),
+    z.union([z.string(), z.number()]).optional()
+  ),
+  amountPaid: z.preprocess(
+    (val) => (val === null || val === "" ? undefined : val),
+    z.union([z.string(), z.number()]).optional()
+  ),
+  paymentDate: z.string().optional(),
+  isPaid: z.enum(["true", "false"]).default("false"),
+  notes: z.string().optional(),
+});
+
+export type InsertFinancialContribution = z.infer<typeof insertFinancialContributionSchema>;
+export type FinancialContribution = typeof financialContributions.$inferSelect;
+
 // Schema for user operations
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,

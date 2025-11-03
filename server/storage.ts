@@ -1,11 +1,14 @@
 import {
   users,
   conventions,
+  financialContributions,
   type User,
   type UpsertUser,
   type Convention,
   type InsertConvention,
   type CreateUser,
+  type FinancialContribution,
+  type InsertFinancialContribution,
   UserRole,
   type UserRoleType
 } from "@shared/schema";
@@ -35,6 +38,12 @@ export interface IStorage {
   searchConventions(query: string): Promise<Convention[]>;
   getConventionsByStatus(status: string): Promise<Convention[]>;
   getConventionsByDateRange(fromDate: string, toDate: string): Promise<Convention[]>;
+  
+  // Financial contribution methods
+  getFinancialContributionsByConvention(conventionId: number): Promise<FinancialContribution[]>;
+  createFinancialContribution(contribution: InsertFinancialContribution): Promise<FinancialContribution>;
+  updateFinancialContribution(id: number, contribution: Partial<InsertFinancialContribution>): Promise<FinancialContribution | undefined>;
+  deleteFinancialContribution(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -280,6 +289,49 @@ export class DatabaseStorage implements IStorage {
       const to = new Date(toDate);
       return convDate >= from && convDate <= to;
     });
+  }
+
+  // Financial contribution operations
+  async getFinancialContributionsByConvention(conventionId: number): Promise<FinancialContribution[]> {
+    return await db
+      .select()
+      .from(financialContributions)
+      .where(eq(financialContributions.conventionId, conventionId))
+      .orderBy(financialContributions.year, financialContributions.partnerName);
+  }
+
+  async createFinancialContribution(contributionData: InsertFinancialContribution): Promise<FinancialContribution> {
+    const [contribution] = await db
+      .insert(financialContributions)
+      .values({
+        ...contributionData,
+        amountExpected: contributionData.amountExpected ? String(contributionData.amountExpected) : null,
+        amountPaid: contributionData.amountPaid ? String(contributionData.amountPaid) : null,
+      })
+      .returning();
+    return contribution;
+  }
+
+  async updateFinancialContribution(
+    id: number, 
+    contributionData: Partial<InsertFinancialContribution>
+  ): Promise<FinancialContribution | undefined> {
+    const [contribution] = await db
+      .update(financialContributions)
+      .set({ 
+        ...contributionData,
+        amountExpected: contributionData.amountExpected ? String(contributionData.amountExpected) : undefined,
+        amountPaid: contributionData.amountPaid ? String(contributionData.amountPaid) : undefined,
+        updatedAt: new Date() 
+      })
+      .where(eq(financialContributions.id, id))
+      .returning();
+    return contribution;
+  }
+
+  async deleteFinancialContribution(id: number): Promise<boolean> {
+    const result = await db.delete(financialContributions).where(eq(financialContributions.id, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 
