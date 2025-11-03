@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ConventionForm } from "@/components/convention-form";
 import { DeleteConfirmation } from "@/components/delete-confirmation";
 import { UserManagement } from "@/components/user-management";
+import { FinancialTracking } from "@/components/financial-tracking";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "@/lib/utils";
 import { getRoleDisplayName } from "@/lib/authUtils";
 import { File, Plus, Download, Search, Eye, Edit, Trash2, LogOut, Users, Settings, BarChart3 } from "lucide-react";
@@ -745,11 +746,17 @@ export default function ConventionsPage() {
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-medium text-gray-700">الاتفاقية</h4>
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{viewingConvention.description}</p>
-              </div>
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="details">تفاصيل الاتفاقية</TabsTrigger>
+                <TabsTrigger value="financial">التتبع المالي</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details" className="space-y-6">
+                <div>
+                  <h4 className="font-medium text-gray-700">الاتفاقية</h4>
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{viewingConvention.description}</p>
+                </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-medium text-gray-700">رقم الاتفاقية</h4>
@@ -785,11 +792,9 @@ export default function ConventionsPage() {
                     {viewingConvention.status}
                   </Badge>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <span className="block text-xs text-gray-500 mb-1">البرنامج</span>
-                    <span className="block font-cairo font-bold text-gray-800">{viewingConvention?.programme || 'غير محدد'}</span>
-                  </div>
+                <div>
+                  <h4 className="font-medium text-gray-700">البرنامج</h4>
+                  <p className="text-gray-900">{viewingConvention?.programme || 'غير محدد'}</p>
                 </div>
               </div>
               
@@ -891,7 +896,12 @@ export default function ConventionsPage() {
                   </div>
                 </div>
               )}
-            </div>
+              </TabsContent>
+              
+              <TabsContent value="financial">
+                <FinancialTracking convention={viewingConvention} />
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       )}
