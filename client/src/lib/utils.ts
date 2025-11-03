@@ -5,17 +5,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number | string | null | undefined): string {
-  if (amount === null || amount === undefined || amount === "") {
-    return "غير محدد";
-  }
+export function formatCurrency(amount: number | string): string {
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(Number(numAmount))) return "غير محدد";
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'MAD',
     minimumFractionDigits: 2,
-  }).format(Number(numAmount));
+  }).format(numAmount);
 }
 
 export function formatDate(date: string): string {

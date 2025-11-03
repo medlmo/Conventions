@@ -57,7 +57,7 @@ export const conventions = pgTable("conventions", {
   attachments: text("attachments"), // JSON string for file paths/URLs
   programme: text("programme"),
   executionType: text("execution_type"), // نوعية التنفيذ
-  delegatedProjectOwner: text("delegated_project_owner"), // صاحب المشروع المنتدب
+  delegatedProjectOwner: text("delegated_project_owner"), // صاحب المشروع المنتدب (JSON array string)
   validity: text("validity"), // سريان الإتفاقية
   jurisdiction: text("jurisdiction"), // الاختصاص
   createdBy: varchar("created_by").references(() => users.id),
@@ -85,7 +85,11 @@ export const insertConventionSchema = createInsertSchema(conventions).omit({
   attachments: z.array(z.string()).optional(),
   programme: z.string().optional(),
   executionType: z.string().optional(), // نوعية التنفيذ
-  delegatedProjectOwner: z.string().optional(), // صاحب المشروع المنتدب
+  delegatedProjectOwner: z.preprocess((val) => {
+    if (Array.isArray(val)) return val;
+    if (val === undefined || val === null || val === "") return undefined;
+    return [String(val)];
+  }, z.array(z.string()).optional()), // صاحب المشروع المنتدب (multi comme الشركاء)
   validity: z.string().optional(), // سريان الإتفاقية
   jurisdiction: z.enum(["منقول", "ذاتي", "مشترك"]).optional(), // الاختصاص
 });

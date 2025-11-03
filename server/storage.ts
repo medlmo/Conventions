@@ -112,6 +112,28 @@ export class DatabaseStorage implements IStorage {
 
   // Convention operations  
   async getAllConventions(): Promise<Convention[]> {
+    const parseArray = (val: unknown): string[] => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val as string[];
+      if (typeof val === 'string') {
+        const s = val.trim();
+        if (!s) return [];
+        try {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed)) return parsed as string[];
+          return [String(parsed)];
+        } catch {
+          if (s.includes(',')) return s.split(',').map(p => p.trim()).filter(Boolean);
+          return [s];
+        }
+      }
+      try {
+        const parsed = JSON.parse(String(val));
+        return Array.isArray(parsed) ? (parsed as string[]) : [String(parsed)];
+      } catch {
+        return [String(val)];
+      }
+    };
     const rows = await db
       .select()
       .from(conventions)
@@ -123,24 +145,51 @@ export class DatabaseStorage implements IStorage {
       );
     return rows.map(c => ({
       ...c,
-      province: c.province ? JSON.parse(c.province) : [],
-      partners: c.partners ? JSON.parse(c.partners) : [],
-      attachments: c.attachments ? JSON.parse(c.attachments) : [],
+      province: parseArray(c.province as unknown as string),
+      partners: parseArray(c.partners as unknown as string),
+      attachments: parseArray(c.attachments as unknown as string),
+      delegatedProjectOwner: parseArray(c.delegatedProjectOwner as unknown as string),
     }));
   }
 
   async getConvention(id: number): Promise<Convention | undefined> {
     const [c] = await db.select().from(conventions).where(eq(conventions.id, id));
     if (!c) return undefined;
+    const parseArray = (val: unknown): string[] => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val as string[];
+      if (typeof val === 'string') {
+        const s = val.trim();
+        if (!s) return [];
+        try {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed)) return parsed as string[];
+          return [String(parsed)];
+        } catch {
+          if (s.includes(',')) return s.split(',').map(p => p.trim()).filter(Boolean);
+          return [s];
+        }
+      }
+      try {
+        const parsed = JSON.parse(String(val));
+        return Array.isArray(parsed) ? (parsed as string[]) : [String(parsed)];
+      } catch {
+        return [String(val)];
+      }
+    };
     return {
       ...c,
-      province: c.province ? JSON.parse(c.province) : [],
-      partners: c.partners ? JSON.parse(c.partners) : [],
-      attachments: c.attachments ? JSON.parse(c.attachments) : [],
+      province: parseArray(c.province as unknown as string),
+      partners: parseArray(c.partners as unknown as string),
+      attachments: parseArray(c.attachments as unknown as string),
+      delegatedProjectOwner: parseArray(c.delegatedProjectOwner as unknown as string),
     };
   }
 
   async createConvention(conventionData: InsertConvention, createdBy: string): Promise<Convention> {
+    const normalizedDelegated = Array.isArray(conventionData.delegatedProjectOwner)
+      ? conventionData.delegatedProjectOwner
+      : (conventionData.delegatedProjectOwner ? [String(conventionData.delegatedProjectOwner)] : undefined);
     const [convention] = await db
       .insert(conventions)
       .values({
@@ -156,6 +205,7 @@ export class DatabaseStorage implements IStorage {
         province: conventionData.province ? JSON.stringify(conventionData.province) : null,
         partners: conventionData.partners ? JSON.stringify(conventionData.partners) : null,
         attachments: conventionData.attachments ? JSON.stringify(conventionData.attachments) : null,
+        delegatedProjectOwner: conventionData.delegatedProjectOwner ? JSON.stringify(conventionData.delegatedProjectOwner) : null,
         createdBy,
       })
       .returning();
@@ -164,6 +214,7 @@ export class DatabaseStorage implements IStorage {
       province: convention.province ? JSON.parse(convention.province) : [],
       partners: convention.partners ? JSON.parse(convention.partners) : [],
       attachments: convention.attachments ? JSON.parse(convention.attachments) : [],
+      delegatedProjectOwner: convention.delegatedProjectOwner ? JSON.parse(convention.delegatedProjectOwner as unknown as string) : [],
     };
   }
 
@@ -183,6 +234,7 @@ export class DatabaseStorage implements IStorage {
         province: updateData.province ? JSON.stringify(updateData.province) : null,
         partners: updateData.partners ? JSON.stringify(updateData.partners) : null,
         attachments: updateData.attachments ? JSON.stringify(updateData.attachments) : null,
+        delegatedProjectOwner: updateData.delegatedProjectOwner ? JSON.stringify(updateData.delegatedProjectOwner) : null,
         updatedAt: new Date(),
       })
       .where(eq(conventions.id, id))
@@ -193,6 +245,7 @@ export class DatabaseStorage implements IStorage {
           province: convention.province ? JSON.parse(convention.province) : [],
           partners: convention.partners ? JSON.parse(convention.partners) : [],
           attachments: convention.attachments ? JSON.parse(convention.attachments) : [],
+          delegatedProjectOwner: convention.delegatedProjectOwner ? JSON.parse(convention.delegatedProjectOwner as unknown as string) : [],
         }
       : undefined;
   }

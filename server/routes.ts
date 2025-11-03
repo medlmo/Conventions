@@ -392,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ['الكلفة الإجمالية', convention.amount ? convention.amount.toLocaleString('fr-FR') + ' د.م' : 'غير محدد'],
         ['مساهمة الجهة', convention.contribution ? convention.contribution.toLocaleString('fr-FR') + ' د.م' : 'غير محدد'],
         ['صاحب المشروع', convention.contractor || 'غير محدد'],
-        ['صاحب المشروع المنتدب', convention.delegatedProjectOwner || 'غير محدد'],
+        ['صاحب المشروع المنتدب', (Array.isArray(convention.delegatedProjectOwner) ? convention.delegatedProjectOwner.join(', ') : (convention.delegatedProjectOwner || 'غير محدد'))],
         ['نوعية التنفيذ', convention.executionType || 'غير محدد'],
         ["سريان الإتفاقية", convention.validity || "غير محدد"],
         ["الاختصاص", convention.jurisdiction || "غير محدد"],
@@ -573,7 +573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: c.amount,
           contribution: c.contribution,
           contractor: c.contractor,
-          delegatedProjectOwner: c.delegatedProjectOwner,
+          delegatedProjectOwner: Array.isArray(c.delegatedProjectOwner) ? c.delegatedProjectOwner.join(', ') : (c.delegatedProjectOwner || ''),
           executionType: c.executionType,
           programme: c.programme,
           province: Array.isArray(c.province) ? c.province.join(', ') : c.province,
@@ -600,7 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conventions = await storage.getAllConventions();
       const sectorCounts: Record<string, number> = {};
       conventions.forEach(c => {
-        const sector = c.sector || 'غير محدد';
+        const sector = ((c.sector as unknown as string) || 'غير محدد').toString().trim().replace(/\s+/g, ' ');
         sectorCounts[sector] = (sectorCounts[sector] || 0) + 1;
       });
       const result = Object.entries(sectorCounts).map(([sector, count]) => ({ sector, count }));
@@ -634,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conventions = await storage.getAllConventions();
       const sectorAmounts: Record<string, number> = {};
       conventions.forEach(c => {
-        const sector = c.sector || 'غير محدد';
+        const sector = ((c.sector as unknown as string) || 'غير محدد').toString().trim().replace(/\s+/g, ' ');
         const amount = Number(c.amount) || 0;
         sectorAmounts[sector] = (sectorAmounts[sector] || 0) + amount;
       });

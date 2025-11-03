@@ -58,7 +58,8 @@ export default function ConventionsPage() {
   });
 
   // Fetch statistics
-  const { data: stats } = useQuery({
+  type DashboardStats = { total: number; signed: number; signature: number; visa: number; visee: number; totalValue: string };
+  const { data: stats } = useQuery<DashboardStats>({
     queryKey: ["/api/conventions/stats"],
   });
 
@@ -291,21 +292,7 @@ export default function ConventionsPage() {
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-6">
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <div className="h-5 w-5 bg-gray-600 rounded-full"></div>
-                      </div>
-                    </div>
-                    <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">إجمالي الاتفاقيات</p>
-                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.total || 0}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              
               <Card className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex items-center">
@@ -366,6 +353,21 @@ export default function ConventionsPage() {
                   </div>
                 </CardContent>
               </Card>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div className="h-5 w-5 bg-gray-600 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="mr-3 min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-600 truncate">إجمالي الاتفاقيات</p>
+                      <p className="text-lg font-cairo font-bold text-gray-900">{stats?.total || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
               {/* Total Value Card */}
               <Card className="overflow-hidden">
                 <CardContent className="p-4">
@@ -376,7 +378,7 @@ export default function ConventionsPage() {
                       </div>
                     </div>
                     <div className="mr-3 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-600 truncate">إجمالي القيمة</p>
+                      <p className="text-xs font-medium text-gray-600 truncate">القيمة الاجمالية </p>
                       <p className="text-sm font-cairo font-bold text-gray-900 truncate">{stats?.totalValue || "درهم 0.00"}</p>
                     </div>
                   </div>
@@ -656,7 +658,7 @@ export default function ConventionsPage() {
                           </TableCell>
                           <TableCell>{convention.sector || "غير محدد"}</TableCell>
                           <TableCell>{convention.domain || "غير محدد"}</TableCell>
-                          <TableCell className="font-medium">{formatCurrency(convention.amount)}</TableCell>
+                          <TableCell className="font-medium">{formatCurrency(convention.amount ?? 0)}</TableCell>
                           <TableCell className="max-w-xs truncate">{convention.description}</TableCell>
                           <TableCell>{convention.session}</TableCell>
                           <TableCell className="font-medium">{convention.conventionNumber}</TableCell>
@@ -794,7 +796,7 @@ export default function ConventionsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-medium text-gray-700">الكلفة الإجمالية</h4>
-                  <p className="text-gray-900 font-semibold">{formatCurrency(viewingConvention.amount)}</p>
+                  <p className="text-gray-900 font-semibold">{formatCurrency(viewingConvention.amount ?? 0)}</p>
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-700">مساهمة الجهة</h4>
@@ -804,10 +806,18 @@ export default function ConventionsPage() {
                   <h4 className="font-medium text-gray-700">صاحب المشروع</h4>
                   <p className="text-gray-900">{viewingConvention.contractor}</p>
                 </div>
-                {/* Champ صاحب المشروع المنتدب */}
+                {/* Champ صاحب المشروع المنتدب (متعدد) */}
                 <div>
                   <h4 className="font-medium text-gray-700">صاحب المشروع المنتدب</h4>
-                  <p className="text-gray-900">{viewingConvention.delegatedProjectOwner || 'غير محدد'}</p>
+                  {Array.isArray(viewingConvention.delegatedProjectOwner) && viewingConvention.delegatedProjectOwner.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {viewingConvention.delegatedProjectOwner.map((dpo: string, idx: number) => (
+                        <Badge key={idx} variant="secondary">{dpo}</Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-900">غير محدد</p>
+                  )}
                 </div>
                 {/* Champ نوعية التنفيذ */}
                 <div>
@@ -816,33 +826,33 @@ export default function ConventionsPage() {
                 </div>
               </div>
               
-              {viewingConvention.province && viewingConvention.province.length > 0 && (
+              {viewingConvention.province && (Array.isArray(viewingConvention.province) ? viewingConvention.province.length > 0 : String(viewingConvention.province).length > 0) && (
                 <div>
                   <h4 className="font-medium text-gray-700 mb-2">العمالة/الإقليم</h4>
                   <div className="flex flex-wrap gap-2">
-                    {viewingConvention.province.map((prov, index) => (
+                    {(Array.isArray(viewingConvention.province) ? viewingConvention.province : [String(viewingConvention.province)]).map((prov: string, index: number) => (
                       <Badge key={index} variant="secondary">{prov}</Badge>
                     ))}
                   </div>
                 </div>
               )}
               
-              {viewingConvention.partners && viewingConvention.partners.length > 0 && (
+              {viewingConvention.partners && (Array.isArray(viewingConvention.partners) ? viewingConvention.partners.length > 0 : String(viewingConvention.partners).length > 0) && (
                 <div>
                   <h4 className="font-medium text-gray-700 mb-2">الشركاء</h4>
                   <div className="flex flex-wrap gap-2">
-                    {viewingConvention.partners.map((partner, index) => (
+                    {(Array.isArray(viewingConvention.partners) ? viewingConvention.partners : [String(viewingConvention.partners)]).map((partner: string, index: number) => (
                       <Badge key={index} variant="secondary">{partner}</Badge>
                     ))}
                   </div>
                 </div>
               )}
               
-              {viewingConvention.attachments && viewingConvention.attachments.length > 0 && (
+              {viewingConvention.attachments && (Array.isArray(viewingConvention.attachments) ? viewingConvention.attachments.length > 0 : String(viewingConvention.attachments).length > 0) && (
                 <div>
                   <h4 className="font-medium text-gray-700 mb-2">المرفقات</h4>
                   <div className="space-y-2">
-                    {viewingConvention.attachments.map((attachment, index) => (
+                    {(Array.isArray(viewingConvention.attachments) ? viewingConvention.attachments : [String(viewingConvention.attachments)]).map((attachment: string, index: number) => (
                       <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
                         <div className="flex items-center space-x-reverse space-x-2">
                           <File className="h-4 w-4 text-gray-500" />

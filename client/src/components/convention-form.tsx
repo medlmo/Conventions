@@ -56,7 +56,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       province: [],
       partners: [],
       attachments: [],
-      delegatedProjectOwner: "",
+      delegatedProjectOwner: [],
       executionType: "",
       validity: "",
       jurisdiction: undefined,
@@ -77,10 +77,10 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       onOpenChange(false);
       form.reset();
     },
-    onError: () => {
+    onError: (err: any) => {
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء حفظ الاتفاقية",
+        description: (err && err.message) ? err.message : "حدث خطأ أثناء حفظ الاتفاقية",
         variant: "destructive",
       });
     },
@@ -100,10 +100,10 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       onOpenChange(false);
       form.reset();
     },
-    onError: () => {
+    onError: (err: any) => {
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء تحديث الاتفاقية",
+        description: (err && err.message) ? err.message : "حدث خطأ أثناء تحديث الاتفاقية",
         variant: "destructive",
       });
     },
@@ -206,7 +206,11 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         province: typeof convention.province === "string" ? JSON.parse(convention.province) : (convention.province || []),
         partners: typeof convention.partners === "string" ? JSON.parse(convention.partners) : (convention.partners || []),
         attachments: typeof convention.attachments === "string" ? JSON.parse(convention.attachments) : (convention.attachments || []),
-        delegatedProjectOwner: convention.delegatedProjectOwner || "",
+        delegatedProjectOwner: Array.isArray(convention.delegatedProjectOwner)
+          ? convention.delegatedProjectOwner
+          : (typeof convention.delegatedProjectOwner === 'string' && convention.delegatedProjectOwner
+              ? (() => { try { return JSON.parse(convention.delegatedProjectOwner as unknown as string); } catch { return [convention.delegatedProjectOwner as unknown as string].filter(Boolean); } })()
+              : []),
         executionType: convention.executionType || "",
         programme: convention.programme || "",
         validity: convention.validity || "",
@@ -239,7 +243,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         province: [],
         partners: [],
         attachments: [],
-        delegatedProjectOwner: "",
+        delegatedProjectOwner: [],
         executionType: "",
         validity: "",
         jurisdiction: undefined,
@@ -475,41 +479,43 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                 )}
               />
 
-              {/* Champ صاحب المشروع المنتدب */}
+              {/* Champ صاحب المشروع المنتدب (متعدد) */}
               <FormField
                 control={form.control}
                 name="delegatedProjectOwner"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>صاحب المشروع المنتدب</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر صاحب المشروع المنتدب" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {partnersList.map((p) => (
-                          <SelectItem key={p} value={p}>{p}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <ReactSelect
+                        isMulti
+                        options={partnersList.map(p => ({ value: p, label: p }))}
+                        value={(field.value || []).map((v: string) => ({ value: v, label: v }))}
+                        onChange={(selected) => field.onChange((selected as any[]).map((opt: any) => opt.value))}
+                        placeholder="اختر واحداً أو أكثر"
+                        classNamePrefix="react-select"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Champ نوعية التنفيذ */}
+              {/* Champ الشركاء */}
               <FormField
                 control={form.control}
-                name="executionType"
+                name="partners"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>نوعية التنفيذ</FormLabel>
+                    <FormLabel>الشركاء</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="نوعية التنفيذ"
-                        {...field}
+                      <ReactSelect
+                        isMulti
+                        options={partnersList.map(p => ({ value: p, label: p }))}
+                        value={field.value?.map((v: string) => ({ value: v, label: v }))}
+                        onChange={selected => field.onChange(selected.map((opt: any) => opt.value))}
+                        placeholder="اختر الشركاء"
+                        classNamePrefix="react-select"
                       />
                     </FormControl>
                     <FormMessage />
@@ -554,27 +560,6 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                         <SelectItem value="مشترك">مشترك</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="partners"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>الشركاء</FormLabel>
-                    <FormControl>
-                      <ReactSelect
-                        isMulti
-                        options={partnersList.map(p => ({ value: p, label: p }))}
-                        value={field.value?.map((v: string) => ({ value: v, label: v }))}
-                        onChange={selected => field.onChange(selected.map((opt: any) => opt.value))}
-                        placeholder="اختر الشركاء"
-                        classNamePrefix="react-select"
-                      />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
