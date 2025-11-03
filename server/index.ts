@@ -7,6 +7,9 @@ import { seedDatabase } from "./seed";
 
 const app = express();
 
+// Trust proxy for Replit environment
+app.set('trust proxy', true);
+
   // Security middleware - Helmet
   app.use(helmet({
     // Désactiver l'en-tête X-Powered-By
