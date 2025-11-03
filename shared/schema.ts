@@ -1,4 +1,4 @@
-import { pgTable, text, serial, decimal, timestamp, varchar, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, decimal, timestamp, varchar, index, jsonb, integer } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -100,7 +100,7 @@ export type Convention = typeof conventions.$inferSelect;
 // Financial contributions table for tracking partner payments
 export const financialContributions = pgTable("financial_contributions", {
   id: serial("id").primaryKey(),
-  conventionId: serial("convention_id").references(() => conventions.id, { onDelete: "cascade" }).notNull(),
+  conventionId: integer("convention_id").references(() => conventions.id, { onDelete: "cascade" }).notNull(),
   partnerName: text("partner_name").notNull(),
   year: text("year").notNull(),
   amountExpected: decimal("amount_expected", { precision: 12, scale: 2 }),
