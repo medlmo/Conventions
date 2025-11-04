@@ -17,6 +17,7 @@ import { ConventionForm } from "@/components/convention-form";
 import { DeleteConfirmation } from "@/components/delete-confirmation";
 import { UserManagement } from "@/components/user-management";
 import { FinancialTracking } from "@/components/financial-tracking";
+import { AdministrativeTracking } from "@/components/administrative-tracking";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "@/lib/utils";
 import { getRoleDisplayName } from "@/lib/authUtils";
 import { File, Plus, Download, Search, Eye, Edit, Trash2, LogOut, Users, Settings, BarChart3 } from "lucide-react";
@@ -747,9 +748,10 @@ export default function ConventionsPage() {
             </DialogHeader>
             
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="details">تفاصيل الاتفاقية</TabsTrigger>
                 <TabsTrigger value="financial">التتبع المالي</TabsTrigger>
+                <TabsTrigger value="administrative">التتبع الإداري</TabsTrigger>
               </TabsList>
               
               <TabsContent value="details" className="space-y-6">
@@ -900,6 +902,10 @@ export default function ConventionsPage() {
               
               <TabsContent value="financial">
                 <FinancialTracking convention={viewingConvention} />
+              </TabsContent>
+              
+              <TabsContent value="administrative">
+                <AdministrativeTracking convention={viewingConvention} />
               </TabsContent>
             </Tabs>
           </DialogContent>

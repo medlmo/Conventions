@@ -134,6 +134,31 @@ export const insertFinancialContributionSchema = createInsertSchema(financialCon
 export type InsertFinancialContribution = z.infer<typeof insertFinancialContributionSchema>;
 export type FinancialContribution = typeof financialContributions.$inferSelect;
 
+// Administrative events table for tracking convention administrative steps
+export const administrativeEvents = pgTable("administrative_events", {
+  id: serial("id").primaryKey(),
+  conventionId: integer("convention_id").references(() => conventions.id, { onDelete: "cascade" }).notNull(),
+  eventDate: text("event_date").notNull(),
+  eventDescription: text("event_description").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Schema for administrative event operations
+export const insertAdministrativeEventSchema = createInsertSchema(administrativeEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  eventDate: z.string().min(1, "تاريخ الحدث مطلوب"),
+  eventDescription: z.string().min(1, "وصف الحدث مطلوب"),
+  notes: z.string().optional(),
+});
+
+export type InsertAdministrativeEvent = z.infer<typeof insertAdministrativeEventSchema>;
+export type AdministrativeEvent = typeof administrativeEvents.$inferSelect;
+
 // Schema for user operations
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,

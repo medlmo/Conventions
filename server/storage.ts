@@ -2,6 +2,7 @@ import {
   users,
   conventions,
   financialContributions,
+  administrativeEvents,
   type User,
   type UpsertUser,
   type Convention,
@@ -9,6 +10,8 @@ import {
   type CreateUser,
   type FinancialContribution,
   type InsertFinancialContribution,
+  type AdministrativeEvent,
+  type InsertAdministrativeEvent,
   UserRole,
   type UserRoleType
 } from "@shared/schema";
@@ -44,6 +47,12 @@ export interface IStorage {
   createFinancialContribution(contribution: InsertFinancialContribution): Promise<FinancialContribution>;
   updateFinancialContribution(id: number, contribution: Partial<InsertFinancialContribution>): Promise<FinancialContribution | undefined>;
   deleteFinancialContribution(id: number): Promise<boolean>;
+  
+  // Administrative event methods
+  getAdministrativeEventsByConvention(conventionId: number): Promise<AdministrativeEvent[]>;
+  createAdministrativeEvent(event: InsertAdministrativeEvent): Promise<AdministrativeEvent>;
+  updateAdministrativeEvent(id: number, event: Partial<InsertAdministrativeEvent>): Promise<AdministrativeEvent | undefined>;
+  deleteAdministrativeEvent(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -331,6 +340,43 @@ export class DatabaseStorage implements IStorage {
 
   async deleteFinancialContribution(id: number): Promise<boolean> {
     const result = await db.delete(financialContributions).where(eq(financialContributions.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Administrative event operations
+  async getAdministrativeEventsByConvention(conventionId: number): Promise<AdministrativeEvent[]> {
+    return await db
+      .select()
+      .from(administrativeEvents)
+      .where(eq(administrativeEvents.conventionId, conventionId))
+      .orderBy(administrativeEvents.eventDate);
+  }
+
+  async createAdministrativeEvent(eventData: InsertAdministrativeEvent): Promise<AdministrativeEvent> {
+    const [event] = await db
+      .insert(administrativeEvents)
+      .values(eventData)
+      .returning();
+    return event;
+  }
+
+  async updateAdministrativeEvent(
+    id: number, 
+    eventData: Partial<InsertAdministrativeEvent>
+  ): Promise<AdministrativeEvent | undefined> {
+    const [event] = await db
+      .update(administrativeEvents)
+      .set({ 
+        ...eventData,
+        updatedAt: new Date() 
+      })
+      .where(eq(administrativeEvents.id, id))
+      .returning();
+    return event;
+  }
+
+  async deleteAdministrativeEvent(id: number): Promise<boolean> {
+    const result = await db.delete(administrativeEvents).where(eq(administrativeEvents.id, id));
     return (result.rowCount || 0) > 0;
   }
 }
