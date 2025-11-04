@@ -195,6 +195,41 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
     }).format(parseFloat(amount));
   };
 
+  const formatDate = (value: string | null) => {
+    if (!value) return "-";
+    const isoMatch = /^\d{4}-\d{2}-\d{2}$/;
+    const slashMatch = /^\d{4}[\/]-\d{2}[\/]-\d{2}$/;
+    const dmySlashMatch = /^\d{2}[\/]-?\d{2}[\/]-?\d{4}$/;
+
+    let year: number, month: number, day: number;
+
+    if (isoMatch.test(value) || slashMatch.test(value)) {
+      const parts = value.split(/[\/-]/);
+      year = Number(parts[0]);
+      month = Number(parts[1]);
+      day = Number(parts[2]);
+    } else if (dmySlashMatch.test(value)) {
+      const parts = value.split(/[\/-]/);
+      day = Number(parts[0]);
+      month = Number(parts[1]);
+      year = Number(parts[2]);
+    } else {
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) {
+        day = d.getUTCDate();
+        month = d.getUTCMonth() + 1;
+        year = d.getUTCFullYear();
+      } else {
+        return value;
+      }
+    }
+
+    const dd = String(day).padStart(2, "0");
+    const mm = String(month).padStart(2, "0");
+    const yyyy = String(year);
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
   const groupByYear = () => {
     const grouped: { [year: string]: FinancialContribution[] } = {};
     contributions.forEach((contribution) => {
@@ -208,6 +243,22 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
 
   const groupedContributions = groupByYear();
   const years = Object.keys(groupedContributions).sort((a, b) => b.localeCompare(a));
+
+  // Limit partners to those already present in the convention record
+  const availablePartners: string[] = (() => {
+    try {
+      if (Array.isArray((convention as any).partners)) {
+        return (convention as any).partners as string[];
+      }
+      if (typeof (convention as any).partners === "string" && (convention as any).partners.trim() !== "") {
+        const parsed = JSON.parse((convention as any).partners);
+        return Array.isArray(parsed) ? (parsed as string[]) : [];
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  })();
 
   return (
     <div className="space-y-4">
@@ -239,37 +290,37 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">الشريك</TableHead>
-                    <TableHead className="text-right">المبلغ المتوقع</TableHead>
-                    <TableHead className="text-right">المبلغ المدفوع</TableHead>
-                    <TableHead className="text-right">تاريخ الدفع</TableHead>
-                    <TableHead className="text-right">الحالة</TableHead>
+                    <TableHead className="text-center">الشريك</TableHead>
+                    <TableHead className="text-center">المبلغ المتوقع</TableHead>
+                    <TableHead className="text-center">المبلغ المحول</TableHead>
+                    <TableHead className="text-center">تاريخ الدفع</TableHead>
+                    <TableHead className="text-center">الحالة</TableHead>
                     <TableHead className="text-center">الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {groupedContributions[year].map((contribution) => (
                     <TableRow key={contribution.id}>
-                      <TableCell className="font-medium">{contribution.partnerName}</TableCell>
-                      <TableCell>{formatCurrency(contribution.amountExpected)}</TableCell>
-                      <TableCell>{formatCurrency(contribution.amountPaid)}</TableCell>
-                      <TableCell>
-                        {contribution.paymentDate
-                          ? new Date(contribution.paymentDate).toLocaleDateString("ar-MA")
-                          : "-"}
+                      <TableCell className="font-medium text-center">{contribution.partnerName}</TableCell>
+                      <TableCell className="text-center">{formatCurrency(contribution.amountExpected)}</TableCell>
+                      <TableCell className="text-center">{formatCurrency(contribution.amountPaid)}</TableCell>
+                      <TableCell className="text-center">
+                        {formatDate(contribution.paymentDate)}
                       </TableCell>
-                      <TableCell>
-                        {contribution.isPaid === "true" ? (
-                          <span className="inline-flex items-center text-green-600">
-                            <CheckCircle className="h-4 w-4 ml-1" />
-                            تم الدفع
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center text-yellow-600">
-                            <XCircle className="h-4 w-4 ml-1" />
-                            لم يتم الدفع
-                          </span>
-                        )}
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center">
+                          {contribution.isPaid === "true" ? (
+                            <span className="inline-flex items-center text-green-600">
+                              <CheckCircle className="h-4 w-4 ml-1" />
+                              تم التحويل
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center text-yellow-600">
+                              <XCircle className="h-4 w-4 ml-1" />
+                              لم يتم التحويل
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">
@@ -303,7 +354,7 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-screen-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-cairo">
               {editingContribution ? "تعديل المساهمة المالية" : "إضافة مساهمة مالية"}
@@ -328,7 +379,7 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
                     <SelectValue placeholder="اختر الشريك" />
                   </SelectTrigger>
                   <SelectContent>
-                    {partnersList.map((partner) => (
+                    {availablePartners.map((partner) => (
                       <SelectItem key={partner} value={partner}>
                         {partner}
                       </SelectItem>
@@ -364,7 +415,7 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="amountPaid">المبلغ المدفوع (درهم)</Label>
+                <Label htmlFor="amountPaid">المبلغ المحول (درهم)</Label>
                 <Input
                   id="amountPaid"
                   type="number"
@@ -378,7 +429,7 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="paymentDate">تاريخ الدفع</Label>
+                <Label htmlFor="paymentDate">تاريخ التحويل</Label>
                 <Input
                   id="paymentDate"
                   type="date"
@@ -390,7 +441,7 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="isPaid">حالة الدفع *</Label>
+                <Label htmlFor="isPaid">حالة التحويل *</Label>
                 <Select
                   value={formData.isPaid}
                   onValueChange={(value) =>
@@ -402,8 +453,8 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="false">لم يتم الدفع</SelectItem>
-                    <SelectItem value="true">تم الدفع</SelectItem>
+                    <SelectItem value="false">لم يتم التحويل</SelectItem>
+                    <SelectItem value="true">تم التحويل</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

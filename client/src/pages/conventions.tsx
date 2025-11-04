@@ -702,7 +702,7 @@ export default function ConventionsPage() {
 
       {viewingConvention && (
         <Dialog open={!!viewingConvention} onOpenChange={() => setViewingConvention(null)}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] sm:w-[90vw] max-w-screen-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-cairo flex flex-col items-start justify-between">
                 <span className="text-base text-gray-700">تفاصيل الاتفاقية</span>

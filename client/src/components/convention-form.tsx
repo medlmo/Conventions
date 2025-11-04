@@ -254,7 +254,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-4xl sm:max-w-5xl md:max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-cairo">
             {convention ? "تعديل الاتفاقية" : "إضافة اتفاقية جديدة"}
