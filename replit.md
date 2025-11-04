@@ -31,9 +31,10 @@ This is a full-stack web application built for managing conventions (اتفاق�
 ## Key Components
 
 ### Database Schema
-The system manages two main entities:
+The system manages three main entities:
 - **Conventions**: Core business entity with fields for convention number, date, description, amount, status, operation type, and contractor
 - **Users**: Authentication entity with username and password
+- **Administrative Events**: Tracking entity for recording administrative events related to conventions (e.g., "sent for visa on 12/12/2023")
 
 ### API Endpoints
 - `GET /api/conventions` - Retrieve all conventions
@@ -126,6 +127,13 @@ The application is configured for deployment on Replit with the following setup:
   - Created drag-and-drop file upload interface with progress indicators
   - Added file management (upload, view, delete) with proper authentication
   - Files are stored securely in uploads directory with unique filenames
+- November 4, 2025: Implemented administrative tracking system for conventions
+  - Added administrativeEvents table to database schema with event date, description, and notes
+  - Created CRUD API endpoints for managing administrative events (GET, POST, PUT, DELETE)
+  - Implemented AdministrativeTracking component with complete event management UI
+  - Integrated administrative tracking into convention details page as a dedicated tab
+  - Applied role-based access control (Admin/Editor can create/edit, all users can view)
+  - Follows project conventions: shared types, Form + useForm + zodResolver pattern, apiRequest helper, proper cache invalidation
 
 ## User Preferences
 
