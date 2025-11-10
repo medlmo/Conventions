@@ -38,6 +38,7 @@ import { insertAdministrativeEventSchema } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { usePermissions } from "@/hooks/useAuth";
 
 interface AdministrativeTrackingProps {
   convention: Convention;
@@ -51,6 +52,7 @@ export function AdministrativeTracking({ convention }: AdministrativeTrackingPro
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AdministrativeEvent | null>(null);
+  const { userRole } = usePermissions();
 
   const form = useForm<AdministrativeEventFormData>({
     resolver: zodResolver(formSchema),
@@ -206,14 +208,16 @@ export function AdministrativeTracking({ convention }: AdministrativeTrackingPro
             <Calendar className="h-5 w-5" />
             التتبع الإداري
           </CardTitle>
-          <Button
-            onClick={handleOpenDialog}
-            size="sm"
-            data-testid="button-add-administrative-event"
-          >
-            <Plus className="h-4 w-4 ml-2" />
-            إضافة حدث
-          </Button>
+          {userRole !== "viewer" && (
+            <Button
+              onClick={handleOpenDialog}
+              size="sm"
+              data-testid="button-add-administrative-event"
+            >
+              <Plus className="h-4 w-4 ml-2" />
+              إضافة حدث
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>

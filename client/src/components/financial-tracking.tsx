@@ -30,6 +30,7 @@ import { Plus, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Convention } from "@shared/schema";
 import { partnersList } from "@/lib/partners";
+import { usePermissions } from "@/hooks/useAuth";
 
 interface FinancialContribution {
   id: number;
@@ -54,6 +55,7 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContribution, setEditingContribution] = useState<FinancialContribution | null>(null);
+  const { userRole } = usePermissions();
   const [formData, setFormData] = useState({
     partnerName: "",
     year: new Date().getFullYear().toString(),
@@ -264,16 +266,18 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold font-cairo">التتبع المالي للشركاء</h3>
-        <Button
-          onClick={() => {
-            resetForm();
-            setIsDialogOpen(true);
-          }}
-          size="sm"
-        >
-          <Plus className="h-4 w-4 ml-2" />
-          إضافة مساهمة
-        </Button>
+        {userRole !== "viewer" && (
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsDialogOpen(true);
+            }}
+            size="sm"
+          >
+            <Plus className="h-4 w-4 ml-2" />
+            إضافة مساهمة
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
