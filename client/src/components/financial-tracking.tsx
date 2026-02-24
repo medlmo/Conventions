@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -26,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle, XCircle, Coins } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Convention } from "@shared/schema";
 import { partnersList } from "@/lib/partners";
@@ -262,100 +263,120 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
     }
   })();
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold font-cairo">التتبع المالي للشركاء</h3>
-        {userRole !== "viewer" && (
-          <Button
-            onClick={() => {
-              resetForm();
-              setIsDialogOpen(true);
-            }}
-            size="sm"
-          >
-            <Plus className="h-4 w-4 ml-2" />
-            إضافة مساهمة
-          </Button>
-        )}
-      </div>
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5" />
+            التتبع المالي للشركاء
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">جاري التحميل...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
-      {isLoading ? (
-        <div className="text-center py-4">جاري التحميل...</div>
-      ) : contributions.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          لا توجد مساهمات مالية مسجلة
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5" />
+            التتبع المالي للشركاء
+          </CardTitle>
+          {userRole !== "viewer" && (
+            <Button
+              onClick={() => {
+                resetForm();
+                setIsDialogOpen(true);
+              }}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 ml-2" />
+              إضافة مساهمة
+            </Button>
+          )}
         </div>
-      ) : (
-        <div className="space-y-6">
-          {years.map((year) => (
-            <div key={year} className="border rounded-lg p-4">
-              <h4 className="font-semibold mb-3 text-primary">السنة {year}</h4>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-center">الشريك</TableHead>
-                    <TableHead className="text-center">المبلغ المتوقع</TableHead>
-                    <TableHead className="text-center">المبلغ المحول</TableHead>
-                    <TableHead className="text-center">تاريخ الدفع</TableHead>
-                    <TableHead className="text-center">الحالة</TableHead>
-                    <TableHead className="text-center">الإجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {groupedContributions[year].map((contribution) => (
-                    <TableRow key={contribution.id}>
-                      <TableCell className="font-medium text-center">{contribution.partnerName}</TableCell>
-                      <TableCell className="text-center">{formatCurrency(contribution.amountExpected)}</TableCell>
-                      <TableCell className="text-center">{formatCurrency(contribution.amountPaid)}</TableCell>
-                      <TableCell className="text-center">
-                        {formatDate(contribution.paymentDate)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center">
-                          {contribution.isPaid === "true" ? (
-                            <span className="inline-flex items-center text-green-600">
-                              <CheckCircle className="h-4 w-4 ml-1" />
-                              تم التحويل
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center text-yellow-600">
-                              <XCircle className="h-4 w-4 ml-1" />
-                              لم يتم التحويل
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(contribution)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (confirm("هل أنت متأكد من حذف هذه المساهمة؟")) {
-                                deleteMutation.mutate(contribution.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </div>
-                      </TableCell>
+      </CardHeader>
+      <CardContent>
+        {contributions.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">
+            لا توجد مساهمات مالية مسجلة
+          </p>
+        ) : (
+          <div className="space-y-6">
+            {years.map((year) => (
+              <div key={year} className="border rounded-lg p-4">
+                <h4 className="font-semibold mb-3 text-primary">السنة {year}</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-center">الشريك</TableHead>
+                      <TableHead className="text-center">المبلغ المتوقع</TableHead>
+                      <TableHead className="text-center">المبلغ المحول</TableHead>
+                      <TableHead className="text-center">تاريخ الدفع</TableHead>
+                      <TableHead className="text-center">الحالة</TableHead>
+                      <TableHead className="text-center">الإجراءات</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ))}
-        </div>
-      )}
+                  </TableHeader>
+                  <TableBody>
+                    {groupedContributions[year].map((contribution) => (
+                      <TableRow key={contribution.id}>
+                        <TableCell className="font-medium text-center">{contribution.partnerName}</TableCell>
+                        <TableCell className="text-center">{formatCurrency(contribution.amountExpected)}</TableCell>
+                        <TableCell className="text-center">{formatCurrency(contribution.amountPaid)}</TableCell>
+                        <TableCell className="text-center">
+                          {formatDate(contribution.paymentDate)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center">
+                            {contribution.isPaid === "true" ? (
+                              <span className="inline-flex items-center text-green-600">
+                                <CheckCircle className="h-4 w-4 ml-1" />
+                                تم التحويل
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center text-yellow-600">
+                                <XCircle className="h-4 w-4 ml-1" />
+                                لم يتم التحويل
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(contribution)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm("هل أنت متأكد من حذف هذه المساهمة؟")) {
+                                  deleteMutation.mutate(contribution.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="w-[95vw] sm:w-[90vw] max-w-screen-xl max-h-[90vh] overflow-y-auto">
@@ -495,6 +516,6 @@ export function FinancialTracking({ convention }: FinancialTrackingProps) {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   );
 }
