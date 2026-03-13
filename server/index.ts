@@ -7,8 +7,10 @@ import { seedDatabase } from "./seed";
 
 const app = express();
 
-// Trust proxy for Replit environment
-app.set('trust proxy', true);
+// Restrictive proxy trust configuration for rate limiting & IPs
+// 'loopback' trusts only localhost proxies; override via TRUST_PROXY if needed.
+const trustProxySetting = process.env.TRUST_PROXY ?? "loopback";
+app.set("trust proxy", trustProxySetting);
 
   // Security middleware - Helmet
   app.use(helmet({

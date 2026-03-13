@@ -22,6 +22,7 @@ const loginLimiter = rateLimit({
   limit: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
 });
 
 const apiLimiter = rateLimit({
@@ -29,6 +30,7 @@ const apiLimiter = rateLimit({
   limit: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
 });
 
 const uploadLimiter = rateLimit({
@@ -36,6 +38,7 @@ const uploadLimiter = rateLimit({
   limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -439,92 +442,222 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ['البرنامج', convention.programme || 'غير محدد'],
       ];
 
-      const { Document, Paragraph, TextRun, Packer, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle } = await import('docx');
+      const {
+        Document, Paragraph, TextRun, Packer, Table, TableRow, TableCell,
+        AlignmentType, WidthType, BorderStyle, ShadingType, VerticalAlign,
+        convertInchesToTwip, PageOrientation,
+      } = await import('docx');
+
+      const BLUE_DARK  = '1A3C5E';
+      const BLUE_MID   = '2E6DA4';
+      const BLUE_LIGHT = 'D6E8F7';
+      const GRAY_LIGHT = 'F4F7FB';
+      const WHITE      = 'FFFFFF';
+      const BORDER_COLOR = 'B0C8E0';
+
+      const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+      const tableBorder = { style: BorderStyle.SINGLE, size: 4, color: BORDER_COLOR };
+
+      const makeCell = (
+        text: string,
+        opts: {
+          bold?: boolean;
+          bg?: string;
+          color?: string;
+          width?: number;
+          size?: number;
+          italic?: boolean;
+        } = {}
+      ) =>
+        new TableCell({
+          width: opts.width !== undefined ? { size: opts.width, type: WidthType.PERCENTAGE } : undefined,
+          verticalAlign: VerticalAlign.CENTER,
+          shading: opts.bg ? { type: ShadingType.SOLID, color: opts.bg, fill: opts.bg } : undefined,
+          margins: { top: convertInchesToTwip(0.04), bottom: convertInchesToTwip(0.04), left: convertInchesToTwip(0.1), right: convertInchesToTwip(0.1) },
+          borders: {
+            top: tableBorder,
+            bottom: tableBorder,
+            left: tableBorder,
+            right: tableBorder,
+          },
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              bidirectional: true,
+              children: [
+                new TextRun({
+                  text,
+                  bold: opts.bold ?? false,
+                  italics: opts.italic ?? false,
+                  size: opts.size ?? 22,
+                  font: 'Arial',
+                  color: opts.color ?? '2C3E50',
+                  rightToLeft: true,
+                }),
+              ],
+            }),
+          ],
+        });
 
       const doc = new Document({
         sections: [{
+          properties: {
+            page: {
+              margin: {
+                top: convertInchesToTwip(0.8),
+                bottom: convertInchesToTwip(0.8),
+                left: convertInchesToTwip(0.9),
+                right: convertInchesToTwip(0.9),
+              },
+            },
+          },
           children: [
-            new Paragraph({
-              alignment: AlignmentType.RIGHT,
-              bidirectional: true,
-              spacing: { after: 200 },
-              children: [
-                new TextRun({
-                  text: 'الاتفاقية:',
-                  bold: true,
-                  size: 28,
-                  font: 'Arial',
-                }),
-              ],
-            }),
-            new Paragraph({
-              alignment: AlignmentType.RIGHT,
-              bidirectional: true,
-              children: [
-                new TextRun({
-                  text: convention.description || 'غير محدد',
-                  font: 'Arial',
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              alignment: AlignmentType.RIGHT,
-              bidirectional: true,
-              children: [
-                new TextRun({
-                  text: 'تفاصيل الاتفاقية',
-                  bold: true,
-                  size: 36,
-                  font: 'Arial',
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
+            // ── Title Banner ─────────────────────────────────────────────
             new Table({
-              alignment: AlignmentType.RIGHT,
               width: { size: 100, type: WidthType.PERCENTAGE },
-              rows: fields.map(([label, value]) =>
+              borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder, insideHorizontal: noBorder, insideVertical: noBorder },
+              rows: [
                 new TableRow({
                   children: [
                     new TableCell({
-                      width: { size: 60, type: WidthType.PERCENTAGE },
+                      shading: { type: ShadingType.SOLID, color: BLUE_DARK, fill: BLUE_DARK },
+                      margins: { top: convertInchesToTwip(0.15), bottom: convertInchesToTwip(0.15), left: convertInchesToTwip(0.2), right: convertInchesToTwip(0.2) },
+                      borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder },
                       children: [
                         new Paragraph({
-                          alignment: AlignmentType.RIGHT,
+                          alignment: AlignmentType.CENTER,
                           bidirectional: true,
                           children: [
-                            new TextRun({ text: String(value), font: 'Arial', size: 24 }),
+                            new TextRun({
+                              text: 'بطاقة الاتفاقية',
+                              bold: true,
+                              size: 40,
+                              font: 'Arial',
+                              color: WHITE,
+                              rightToLeft: true,
+                            }),
                           ],
                         }),
-                      ],
-                    }),
-                    new TableCell({
-                      width: { size: 40, type: WidthType.PERCENTAGE },
-                      children: [
                         new Paragraph({
-                          alignment: AlignmentType.RIGHT,
+                          alignment: AlignmentType.CENTER,
                           bidirectional: true,
                           children: [
-                            new TextRun({ text: String(label), bold: true, font: 'Arial', size: 24 }),
+                            new TextRun({
+                              text: `رقم الاتفاقية: ${convention.conventionNumber || 'غير محدد'}`,
+                              size: 22,
+                              font: 'Arial',
+                              color: 'B8D4EE',
+                              rightToLeft: true,
+                            }),
                           ],
                         }),
                       ],
                     }),
                   ],
-                  tableHeader: false,
-                })
-              ),
-              borders: {
-                top: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
-                bottom: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
-                left: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
-                right: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
-                insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
-                insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'auto' },
-              },
+                }),
+              ],
             }),
+
+            // ── Spacer ───────────────────────────────────────────────────
+            new Paragraph({ spacing: { after: 240 }, children: [] }),
+
+            // ── Description Section ──────────────────────────────────────
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              bidirectional: true,
+              spacing: { after: 80 },
+              children: [
+                new TextRun({
+                  text: 'موضوع الاتفاقية',
+                  bold: true,
+                  size: 26,
+                  font: 'Arial',
+                  color: BLUE_MID,
+                  rightToLeft: true,
+                }),
+              ],
+            }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder, insideHorizontal: noBorder, insideVertical: noBorder },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      shading: { type: ShadingType.SOLID, color: GRAY_LIGHT, fill: GRAY_LIGHT },
+                      margins: { top: convertInchesToTwip(0.1), bottom: convertInchesToTwip(0.1), left: convertInchesToTwip(0.15), right: convertInchesToTwip(0.15) },
+                      borders: {
+                        top: { style: BorderStyle.SINGLE, size: 6, color: BLUE_MID },
+                        bottom: tableBorder,
+                        left: tableBorder,
+                        right: { style: BorderStyle.SINGLE, size: 6, color: BLUE_MID },
+                      },
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.RIGHT,
+                          bidirectional: true,
+                          children: [
+                            new TextRun({
+                              text: convention.description || 'غير محدد',
+                              size: 23,
+                              font: 'Arial',
+                              color: '2C3E50',
+                              rightToLeft: true,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+
+            // ── Spacer ───────────────────────────────────────────────────
+            new Paragraph({ spacing: { after: 240 }, children: [] }),
+
+            // ── Section Title ────────────────────────────────────────────
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              bidirectional: true,
+              spacing: { after: 100 },
+              children: [
+                new TextRun({
+                  text: 'تفاصيل الاتفاقية',
+                  bold: true,
+                  size: 26,
+                  font: 'Arial',
+                  color: BLUE_MID,
+                  rightToLeft: true,
+                }),
+              ],
+            }),
+
+            // ── Details Table ─────────────────────────────────────────────
+            new Table({
+              alignment: AlignmentType.CENTER,
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              borders: {
+                top: tableBorder,
+                bottom: tableBorder,
+                left: tableBorder,
+                right: tableBorder,
+                insideHorizontal: tableBorder,
+                insideVertical: tableBorder,
+              },
+              rows: [
+                // Data rows with alternating background
+                ...fields.map(([label, value], idx) =>
+                  new TableRow({
+                    children: [
+                      makeCell(String(value), { bg: idx % 2 === 0 ? WHITE : GRAY_LIGHT, width: 60 }),
+                      makeCell(String(label), { bold: true, bg: idx % 2 === 0 ? BLUE_LIGHT : 'C5DDF0', width: 40 }),
+                    ],
+                  })
+                ),
+              ],
+            }),
+
           ],
         }],
       });

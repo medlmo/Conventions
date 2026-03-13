@@ -703,19 +703,18 @@ export default function ConventionsPage() {
 
       {viewingConvention && (
         <Dialog open={!!viewingConvention} onOpenChange={() => setViewingConvention(null)}>
-          <DialogContent className="w-[95vw] sm:w-[90vw] max-w-screen-xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-cairo flex flex-col items-start justify-between">
-                <span className="text-base text-gray-700">تفاصيل الاتفاقية</span>
+          <DialogContent dir="rtl" className="w-[95vw] sm:w-[90vw] max-w-screen-xl max-h-[90vh] overflow-y-auto font-cairo">
+            <DialogHeader className="text-right">
+              <DialogTitle className="flex items-center justify-between gap-3">
+                <span className="text-base font-semibold text-gray-700">تفاصيل الاتفاقية</span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={async () => {
                     try {
-                      // Download Word document from server
                       const response = await fetch(`/api/conventions/${viewingConvention.id}/download`, {
                         method: 'GET',
-                        credentials: 'include', // Include session cookies
+                        credentials: 'include',
                       });
 
                       if (!response.ok) {
@@ -739,165 +738,165 @@ export default function ConventionsPage() {
                       });
                     }
                   }}
-                  className="text-green-600 hover:text-green-700"
+                  className="text-green-600 hover:text-green-700 flex items-center gap-2 shrink-0"
                 >
-                  <Download className="h-4 w-4 ml-2" />
+                  <Download className="h-4 w-4" />
                   تحميل بطاقة الاتفاقية
                 </Button>
               </DialogTitle>
             </DialogHeader>
             
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-3" dir="rtl">
                 <TabsTrigger value="details">تفاصيل الاتفاقية</TabsTrigger>
                 <TabsTrigger value="financial">التتبع المالي</TabsTrigger>
                 <TabsTrigger value="administrative">التتبع الإداري</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="details" className="space-y-6">
+              <TabsContent value="details" className="space-y-6 mt-4">
                 <div>
-                  <h4 className="font-medium text-gray-700">الاتفاقية</h4>
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{viewingConvention.description}</p>
+                  <h4 className="font-medium text-gray-700 mb-1 text-right">الاتفاقية</h4>
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg text-right">{viewingConvention.description}</p>
                 </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-700">رقم الاتفاقية</h4>
-                  <p className="text-gray-900">{viewingConvention.conventionNumber}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">رقم الاتفاقية</h4>
+                    <p className="text-gray-900">{viewingConvention.conventionNumber}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">التاريخ</h4>
+                    <p className="text-gray-900">{formatDate(viewingConvention.date)}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">السنة</h4>
+                    <p className="text-gray-900">{viewingConvention.year}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">الدورة</h4>
+                    <p className="text-gray-900">{viewingConvention.session}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">القطاع</h4>
+                    <p className="text-gray-900">{viewingConvention.sector}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">المجال</h4>
+                    <p className="text-gray-900">{viewingConvention.domain || "غير محدد"}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">رقم المقرر</h4>
+                    <p className="text-gray-900">{viewingConvention.decisionNumber}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">الحالة</h4>
+                    <div className="mt-1">
+                      <Badge className={getStatusBadgeClass(viewingConvention.status)}>
+                        {viewingConvention.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">البرنامج</h4>
+                    <p className="text-gray-900">{viewingConvention?.programme || 'غير محدد'}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">التاريخ</h4>
-                  <p className="text-gray-900">{formatDate(viewingConvention.date)}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">السنة</h4>
-                  <p className="text-gray-900">{viewingConvention.year}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">الدورة</h4>
-                  <p className="text-gray-900">{viewingConvention.session}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">القطاع</h4>
-                  <p className="text-gray-900">{viewingConvention.sector}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">المجال</h4>
-                  <p className="text-gray-900">{viewingConvention.domain || "غير محدد"}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">رقم المقرر</h4>
-                  <p className="text-gray-900">{viewingConvention.decisionNumber}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">الحالة</h4>
-                  <Badge className={getStatusBadgeClass(viewingConvention.status)}>
-                    {viewingConvention.status}
-                  </Badge>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">البرنامج</h4>
-                  <p className="text-gray-900">{viewingConvention?.programme || 'غير محدد'}</p>
-                </div>
-              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-700">الكلفة الإجمالية</h4>
-                  <p className="text-gray-900 font-semibold">{formatCurrency(viewingConvention.amount ?? 0)}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">الكلفة الإجمالية</h4>
+                    <p className="text-gray-900 font-semibold">{formatCurrency(viewingConvention.amount ?? 0)}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">مساهمة الجهة</h4>
+                    <p className="text-gray-900">{viewingConvention.contribution ? formatCurrency(viewingConvention.contribution) : 'غير محدد'}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">صاحب المشروع</h4>
+                    <p className="text-gray-900">{viewingConvention.contractor}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">صاحب المشروع المنتدب</h4>
+                    {Array.isArray(viewingConvention.delegatedProjectOwner) && viewingConvention.delegatedProjectOwner.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 mt-1 justify-end">
+                        {viewingConvention.delegatedProjectOwner.map((dpo: string, idx: number) => (
+                          <Badge key={idx} variant="secondary">{dpo}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-900">غير محدد</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700">نوعية التنفيذ</h4>
+                    <p className="text-gray-900">{viewingConvention.executionType || 'غير محدد'}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">مساهمة الجهة</h4>
-                  <p className="text-gray-900">{viewingConvention.contribution ? formatCurrency(viewingConvention.contribution) : 'غير محدد'}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-700">صاحب المشروع</h4>
-                  <p className="text-gray-900">{viewingConvention.contractor}</p>
-                </div>
-                {/* Champ صاحب المشروع المنتدب (متعدد) */}
-                <div>
-                  <h4 className="font-medium text-gray-700">صاحب المشروع المنتدب</h4>
-                  {Array.isArray(viewingConvention.delegatedProjectOwner) && viewingConvention.delegatedProjectOwner.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {viewingConvention.delegatedProjectOwner.map((dpo: string, idx: number) => (
-                        <Badge key={idx} variant="secondary">{dpo}</Badge>
+              
+                {viewingConvention.province && (Array.isArray(viewingConvention.province) ? viewingConvention.province.length > 0 : String(viewingConvention.province).length > 0) && (
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700 mb-2">العمالة/الإقليم</h4>
+                    <div className="flex flex-wrap gap-2 justify-end">
+                      {(Array.isArray(viewingConvention.province) ? viewingConvention.province : [String(viewingConvention.province)]).map((prov: string, index: number) => (
+                        <Badge key={index} variant="secondary">{prov}</Badge>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-gray-900">غير محدد</p>
-                  )}
-                </div>
-                {/* Champ نوعية التنفيذ */}
-                <div>
-                  <h4 className="font-medium text-gray-700">نوعية التنفيذ</h4>
-                  <p className="text-gray-900">{viewingConvention.executionType || 'غير محدد'}</p>
-                </div>
-              </div>
-              
-              {viewingConvention.province && (Array.isArray(viewingConvention.province) ? viewingConvention.province.length > 0 : String(viewingConvention.province).length > 0) && (
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">العمالة/الإقليم</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {(Array.isArray(viewingConvention.province) ? viewingConvention.province : [String(viewingConvention.province)]).map((prov: string, index: number) => (
-                      <Badge key={index} variant="secondary">{prov}</Badge>
-                    ))}
                   </div>
-                </div>
-              )}
+                )}
               
-              {viewingConvention.partners && (Array.isArray(viewingConvention.partners) ? viewingConvention.partners.length > 0 : String(viewingConvention.partners).length > 0) && (
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">الشركاء</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {(Array.isArray(viewingConvention.partners) ? viewingConvention.partners : [String(viewingConvention.partners)]).map((partner: string, index: number) => (
-                      <Badge key={index} variant="secondary">{partner}</Badge>
-                    ))}
+                {viewingConvention.partners && (Array.isArray(viewingConvention.partners) ? viewingConvention.partners.length > 0 : String(viewingConvention.partners).length > 0) && (
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700 mb-2">الشركاء</h4>
+                    <div className="flex flex-wrap gap-2 justify-end">
+                      {(Array.isArray(viewingConvention.partners) ? viewingConvention.partners : [String(viewingConvention.partners)]).map((partner: string, index: number) => (
+                        <Badge key={index} variant="secondary">{partner}</Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               
-              {viewingConvention.attachments && (Array.isArray(viewingConvention.attachments) ? viewingConvention.attachments.length > 0 : String(viewingConvention.attachments).length > 0) && (
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">المرفقات</h4>
-                  <div className="space-y-2">
-                    {(Array.isArray(viewingConvention.attachments) ? viewingConvention.attachments : [String(viewingConvention.attachments)]).map((attachment: string, index: number) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                        <div className="flex items-center space-x-reverse space-x-2">
-                          <File className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm text-gray-700">
-                            {attachment.split('/').pop()}
-                          </span>
+                {viewingConvention.attachments && (Array.isArray(viewingConvention.attachments) ? viewingConvention.attachments.length > 0 : String(viewingConvention.attachments).length > 0) && (
+                  <div className="text-right">
+                    <h4 className="font-medium text-gray-700 mb-2">المرفقات</h4>
+                    <div className="space-y-2">
+                      {(Array.isArray(viewingConvention.attachments) ? viewingConvention.attachments : [String(viewingConvention.attachments)]).map((attachment: string, index: number) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(attachment);
+                                if (!response.ok) throw new Error('Failed to fetch file');
+                                
+                                const blob = await response.blob();
+                                const suggested = attachment.split('/').pop() || 'file';
+                                const fname = sanitizeFileName(suggested);
+                                saveAs(blob, fname);
+                              } catch (error) {
+                                console.error('Error downloading file:', error);
+                                toast({
+                                  title: "خطأ في التحميل",
+                                  description: "حدث خطأ أثناء تحميل الملف",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="تحميل الملف"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-700">
+                              {attachment.split('/').pop()}
+                            </span>
+                            <File className="h-4 w-4 text-gray-500" />
+                          </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={async () => {
-                            try {
-                              const response = await fetch(attachment);
-                              if (!response.ok) throw new Error('Failed to fetch file');
-                              
-                              const blob = await response.blob();
-                              const suggested = attachment.split('/').pop() || 'file';
-                              const fname = sanitizeFileName(suggested);
-                              saveAs(blob, fname);
-                            } catch (error) {
-                              console.error('Error downloading file:', error);
-                              toast({
-                                title: "خطأ في التحميل",
-                                description: "حدث خطأ أثناء تحميل الملف",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
-                          className="text-blue-500 hover:text-blue-700"
-                          title="تحميل الملف"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               </TabsContent>
               
               <TabsContent value="financial">
