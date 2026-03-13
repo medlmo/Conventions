@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getSession, requireAuth, requireRole } from "./auth";
@@ -15,12 +16,37 @@ import {
 import { z } from "zod";
 import path from "path";
 
+// Production-grade rate limiting configuration
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Global limiter for all API routes
+  app.use("/api", apiLimiter);
+
   // Setup session middleware
   app.use(getSession());
 
   // Auth routes
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", loginLimiter, async (req, res) => {
     try {
       const { username, password } = loginSchema.parse(req.body);
       const user = await storage.validateUser(username, password);
@@ -280,7 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // File upload routes
-  app.post("/api/upload", requireAuth, (req, res, next) => {
+  app.post("/api/upload", requireAuth, uploadLimiter, (req, res, next) => {
     upload.array('files', 5)(req, res, (err: any) => {
       if (err) {
         console.error("Multer error:", err);
