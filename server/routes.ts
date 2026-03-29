@@ -4,7 +4,7 @@ import rateLimit from "express-rate-limit";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getSession, requireAuth, requireRole } from "./auth";
-import { upload, deleteFile } from "./upload";
+import { deleteFile, persistUploads, upload, uploadsDir } from "./upload";
 import { 
   insertConventionSchema, 
   loginSchema, 
@@ -197,7 +197,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all conventions - All authenticated users can view
   app.get("/api/conventions", requireAuth, async (req, res) => {
     try {
-      const conventions = await storage.getAllConventions();
+      const q = req.query as Record<string, unknown>;
+      const search = typeof q.search === "string" ? q.search : undefined;
+      const status = typeof q.status === "string" ? q.status : undefined;
+      const sector = typeof q.sector === "string" ? q.sector : undefined;
+      const programme = typeof q.programme === "string" ? q.programme : undefined;
+      const domain = typeof q.domain === "string" ? q.domain : undefined;
+      const limit =
+        typeof q.limit === "string" && q.limit.trim() ? Number(q.limit) : undefined;
+      const offset =
+        typeof q.offset === "string" && q.offset.trim() ? Number(q.offset) : undefined;
+
+      const conventions = await storage.getConventions({
+        search,
+        status,
+        sector,
+        programme,
+        domain,
+        limit,
+        offset,
+      });
       res.json(conventions);
     } catch (error) {
       console.error("Error fetching conventions:", error);
@@ -357,45 +376,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "لم يتم رفع أي ملفات" });
       }
 
-      // Validation de la taille des fichiers côté serveur
-      const maxFileSize = 10 * 1024 * 1024; // 10MB en bytes
-      const oversizedFiles: string[] = [];
-
-      for (const file of files) {
-        if (file.size > maxFileSize) {
-          oversizedFiles.push(file.originalname);
-          // Supprimer le fichier trop volumineux
-          const { deleteFile } = await import('./upload');
-          deleteFile(file.filename);
-        }
+      // Validate using magic bytes + persist only after validation.
+      const uploadedFiles = await persistUploads(files);
+      res.json({ files: uploadedFiles });
+    } catch (error) {
+      const code = (error as any)?.code;
+      if (code === "UNSUPPORTED_FILE_TYPE") {
+        return res.status(400).json({
+          message: "نوع الملف غير مسموح. يرجى رفع ملفات PDF, Word, Excel أو الصور فقط.",
+          error: "UNSUPPORTED_FILE_TYPE",
+        });
       }
-
-      // Si des fichiers sont trop volumineux, retourner une erreur
-      if (oversizedFiles.length > 0) {
-        const fileList = oversizedFiles.join(', ');
-        return res.status(400).json({ 
-          message: `الملفات التالية كبيرة جداً (الحد الأقصى 10 ميجابايت): ${fileList}`,
-          oversizedFiles 
+      if (code === "MISSING_BUFFER") {
+        return res.status(400).json({
+          message: "خطأ في معالجة الملف المرفوع",
+          error: "MISSING_BUFFER",
         });
       }
 
-      const uploadedFiles = files.map(file => ({
-        originalName: file.originalname,
-        filename: file.filename,
-        size: file.size,
-        mimetype: file.mimetype,
-        path: `/uploads/${file.filename}`
-      }));
-
-      res.json({ files: uploadedFiles });
-    } catch (error) {
       console.error("Error uploading files:", error);
-      res.status(500).json({ message: "خطأ في رفع الملفات" });
+      return res.status(500).json({ message: "خطأ في رفع الملفات" });
     }
   });
 
   // Serve uploaded files
-  app.use('/uploads', requireAuth, express.static(path.join(process.cwd(), 'uploads')));
+  app.use(
+    '/uploads',
+    requireAuth,
+    express.static(uploadsDir, {
+      etag: false,
+      maxAge: 0,
+      setHeaders: (res) => {
+        // Prevent caching of uploaded content.
+        res.setHeader("Cache-Control", "private, no-store");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader("Content-Disposition", "attachment");
+      },
+    })
+  );
 
   // Download convention as Word document
   app.get("/api/conventions/:id/download", requireAuth, async (req, res) => {
@@ -410,6 +428,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Format date in French with Western digits
       const dateFr = new Date(convention.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+      const formatMad = (value: unknown): string => {
+        if (value === null || value === undefined || value === "") return "غير محدد";
+        const n = typeof value === "number" ? value : Number(String(value));
+        if (!Number.isFinite(n)) return String(value);
+        return `${n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.م`;
+      };
+
       // Prepare table rows (label, value)
       const fields = [
         ['رقم الاتفاقية', convention.conventionNumber || 'غير محدد'],
@@ -420,8 +445,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ['القطاع', convention.sector || 'غير محدد'],
         ['رقم المقرر', convention.decisionNumber || 'غير محدد'],
         ['الحالة', convention.status || 'غير محدد'],
-        ['الكلفة الإجمالية', convention.amount ? convention.amount.toLocaleString('fr-FR') + ' د.م' : 'غير محدد'],
-        ['مساهمة الجهة', convention.contribution ? convention.contribution.toLocaleString('fr-FR') + ' د.م' : 'غير محدد'],
+        ['الكلفة الإجمالية', formatMad(convention.amount)],
+        ['مساهمة الجهة', formatMad(convention.contribution)],
         ['صاحب المشروع', convention.contractor || 'غير محدد'],
         ['صاحب المشروع المنتدب', (Array.isArray(convention.delegatedProjectOwner) ? convention.delegatedProjectOwner.join(', ') : (convention.delegatedProjectOwner || 'غير محدد'))],
         ['نوعية التنفيذ', convention.executionType || 'غير محدد'],
@@ -681,8 +706,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/upload/:filename", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), (req, res) => {
     try {
       const { filename } = req.params;
-      deleteFile(filename);
-      res.json({ message: "تم حذف الملف بنجاح" });
+      const ok = deleteFile(filename);
+      if (!ok) {
+        return res.status(404).json({ message: "الملف غير موجود أو غير صالح" });
+      }
+      return res.json({ message: "تم حذف الملف بنجاح" });
     } catch (error) {
       console.error("Error deleting file:", error);
       res.status(500).json({ message: "خطأ في حذف الملف" });
@@ -830,16 +858,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conventions = await storage.getAllConventions();
       const provinceCounts: Record<string, number> = {};
       conventions.forEach(c => {
-        let provinces = c.province || [];
-        if (typeof provinces === 'string') {
-          try {
-            provinces = JSON.parse(provinces);
-          } catch {
-            provinces = provinces.split(',').map((p: string) => p.trim());
-          }
-        }
-        if (!Array.isArray(provinces)) provinces = [String(provinces)];
-        (provinces as string[]).forEach((prov: string) => {
+        const provinces = Array.isArray(c.province) ? c.province : [];
+        provinces.forEach((prov: string) => {
           if (!prov) return;
           provinceCounts[prov] = (provinceCounts[prov] || 0) + 1;
         });

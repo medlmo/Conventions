@@ -42,6 +42,12 @@ app.set("trust proxy", trustProxySetting);
     frameguard: {
       action: 'deny'
     },
+    // Additional hardening headers (won't break typical same-origin apps)
+    dnsPrefetchControl: { allow: false },
+    crossOriginResourcePolicy: { policy: "same-site" },
+    crossOriginOpenerPolicy: { policy: "same-origin" },
+    originAgentCluster: true,
+    permittedCrossDomainPolicies: { permittedPolicies: "none" },
     // Désactiver XSS Protection (remplacé par CSP)
     xssFilter: false,
     // Désactiver IE XSS Protection
@@ -53,8 +59,9 @@ app.set("trust proxy", trustProxySetting);
 // Désactiver explicitement l'en-tête X-Powered-By
 app.disable('x-powered-by');
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// A client sending a 100 MB JSON payload would otherwise crash the process.
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ limit: "1mb", extended: false }));
 
 app.use((req, res, next) => {
   const start = Date.now();

@@ -38,6 +38,7 @@ export function getSession() {
     cookie: {
       httpOnly: true,
       secure: false, // Set to true in production with HTTPS
+      sameSite: "strict",
       maxAge: sessionTtl,
     },
   });

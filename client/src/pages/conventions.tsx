@@ -53,10 +53,39 @@ export default function ConventionsPage() {
   const [programmeFilter, setProgrammeFilter] = useState("");
   const [domainStats, setDomainStats] = useState([]);
   const [provinceStats, setProvinceStats] = useState([]);
+  // Applied filters (click on "تطبيق البحث" to refetch from the server)
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState("");
+  const [appliedDomainFilter, setAppliedDomainFilter] = useState("");
+  const [appliedSectorFilter, setAppliedSectorFilter] = useState("");
+  const [appliedProgrammeFilter, setAppliedProgrammeFilter] = useState("");
 
   // Fetch conventions
+  const toParam = (v: string) => (v && v !== "all" ? v : undefined);
+  const conventionsUrl = (() => {
+    const params = new URLSearchParams();
+    const search = toParam(appliedSearchQuery);
+    const status = toParam(appliedStatusFilter);
+    const sector = toParam(appliedSectorFilter);
+    const programme = toParam(appliedProgrammeFilter);
+    const domain = toParam(appliedDomainFilter);
+
+    if (search) params.set("search", search);
+    if (status) params.set("status", status);
+    if (sector) params.set("sector", sector);
+    if (programme) params.set("programme", programme);
+    if (domain) params.set("domain", domain);
+
+    // Protect the server: never fetch the whole dataset unbounded.
+    params.set("limit", "1000");
+    params.set("offset", "0");
+
+    const qs = params.toString();
+    return qs ? `/api/conventions?${qs}` : "/api/conventions";
+  })();
+
   const { data: conventions = [], isLoading } = useQuery<Convention[]>({
-    queryKey: ["/api/conventions"],
+    queryKey: [conventionsUrl],
   });
 
   // Fetch statistics
@@ -91,7 +120,7 @@ export default function ConventionsPage() {
       await apiRequest("DELETE", `/api/conventions/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/conventions"] });
+      queryClient.invalidateQueries({ queryKey: [conventionsUrl] });
       queryClient.invalidateQueries({ queryKey: ["/api/conventions/stats"] });
       toast({
         title: "تم الحذف بنجاح",
@@ -109,21 +138,8 @@ export default function ConventionsPage() {
     },
   });
 
-  // Filter conventions
-  const filteredConventions = conventions.filter((convention) => {
-    const matchesSearch = !searchQuery || 
-      convention.conventionNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      convention.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      convention.contractor.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = !statusFilter || statusFilter === "all" || convention.status === statusFilter;
-    
-    const matchesSector = !sectorFilter || sectorFilter === "all" || convention.sector === sectorFilter;
-    const matchesProgramme = !programmeFilter || programmeFilter === "all" || convention.programme === programmeFilter;
-    const matchesDomain = !domainFilter || domainFilter === "all" || convention.domain === domainFilter;
-    
-    return matchesSearch && matchesStatus && matchesSector && matchesProgramme && matchesDomain;
-  });
+  // The server already applies filters; keep a compatible variable name.
+  const filteredConventions = conventions;
 
   const handleAddNew = () => {
     if (!permissions.canCreateConvention) {
@@ -210,6 +226,12 @@ export default function ConventionsPage() {
     setDomainFilter("all");
     setSectorFilter("all");
     setProgrammeFilter("all");
+
+    setAppliedSearchQuery("");
+    setAppliedStatusFilter("all");
+    setAppliedDomainFilter("all");
+    setAppliedSectorFilter("all");
+    setAppliedProgrammeFilter("all");
   };
 
   return (
@@ -587,11 +609,20 @@ export default function ConventionsPage() {
                 </Select>
               </div>
             </div>
-            <div className="flex justify-between items-center mt-4">
-              <Button className="bg-primary hover:bg-primary/90">
-                <Search className="ml-2 h-4 w-4" />
-                تطبيق البحث
-              </Button>
+              <div className="flex justify-between items-center mt-4">
+                <Button
+                  className="bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    setAppliedSearchQuery(searchQuery);
+                    setAppliedStatusFilter(statusFilter);
+                    setAppliedSectorFilter(sectorFilter);
+                    setAppliedProgrammeFilter(programmeFilter);
+                    setAppliedDomainFilter(domainFilter);
+                  }}
+                >
+                  <Search className="ml-2 h-4 w-4" />
+                  تطبيق البحث
+                </Button>
               <Button variant="ghost" onClick={clearFilters}>
                 مسح الفلتر
               </Button>

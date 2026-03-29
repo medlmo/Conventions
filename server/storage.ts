@@ -34,6 +34,15 @@ export interface IStorage {
   
   // Convention methods
   getAllConventions(): Promise<Convention[]>;
+  getConventions(filters?: {
+    search?: string;
+    status?: string;
+    sector?: string;
+    programme?: string;
+    domain?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Convention[]>;
   getConvention(id: number): Promise<Convention | undefined>;
   createConvention(convention: InsertConvention, createdBy: string): Promise<Convention>;
   updateConvention(id: number, convention: Partial<InsertConvention>): Promise<Convention | undefined>;
@@ -68,13 +77,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // Always hash password before persisting to avoid storing plaintext passwords.
+    // `UpsertUser` is derived from `users.$inferInsert` where `password` is required.
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const { password: _password, ...rest } = userData;
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values({
+        ...rest,
+        password: hashedPassword,
+      })
       .onConflictDoUpdate({
         target: users.id,
         set: {
-          ...userData,
+          ...rest,
+          password: hashedPassword,
           updatedAt: new Date(),
         },
       })
@@ -103,9 +120,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined> {
+    // Never overwrite stored passwords with plaintext.
+    // Only hash and set password when an explicit password update is requested.
+    const passwordUpdate =
+      userData && Object.prototype.hasOwnProperty.call(userData, "password") && typeof userData.password === "string"
+        ? userData.password
+        : undefined;
+
+    const { password: _password, ...rest } = userData as typeof userData & { password?: unknown };
+    const nextUserData: Partial<UpsertUser> = {
+      ...rest,
+      ...(passwordUpdate ? { password: await bcrypt.hash(passwordUpdate, 10) } : {}),
+    };
+
     const [user] = await db
       .update(users)
-      .set({ ...userData, updatedAt: new Date() })
+      .set({ ...nextUserData, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
     return user;
@@ -167,7 +197,107 @@ export class DatabaseStorage implements IStorage {
       partners: parseArray(c.partners as unknown as string),
       attachments: parseArray(c.attachments as unknown as string),
       delegatedProjectOwner: parseArray(c.delegatedProjectOwner as unknown as string),
-    }));
+    })) as unknown as Convention[];
+  }
+
+  async getConventions(filters?: {
+    search?: string;
+    status?: string;
+    sector?: string;
+    programme?: string;
+    domain?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Convention[]> {
+    const parseArray = (val: unknown): string[] => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val as string[];
+      if (typeof val === "string") {
+        const s = val.trim();
+        if (!s) return [];
+        try {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed)) return parsed as string[];
+          return [String(parsed)];
+        } catch {
+          if (s.includes(",")) return s.split(",").map((p) => p.trim()).filter(Boolean);
+          return [s];
+        }
+      }
+      try {
+        const parsed = JSON.parse(String(val));
+        return Array.isArray(parsed) ? (parsed as string[]) : [String(parsed)];
+      } catch {
+        return [String(val)];
+      }
+    };
+
+    const search = typeof filters?.search === "string" ? filters?.search.trim() : "";
+    const status = typeof filters?.status === "string" ? filters?.status.trim() : "";
+    const sector = typeof filters?.sector === "string" ? filters?.sector.trim() : "";
+    const programme = typeof filters?.programme === "string" ? filters?.programme.trim() : "";
+    const domain = typeof filters?.domain === "string" ? filters?.domain.trim() : "";
+
+    const safeLimit = Math.max(1, Math.min(Number(filters?.limit ?? 1000) || 1000, 5000));
+    const safeOffset = Math.max(0, Number(filters?.offset ?? 0) || 0);
+
+    const MAX_QUERY_LEN = 100;
+    const safeQuery = search.slice(0, MAX_QUERY_LEN);
+    const pattern = `%${safeQuery}%`;
+
+    // Build WHERE clause incrementally to avoid loading everything in memory.
+    const conditions: unknown[] = [];
+
+    if (safeQuery) {
+      conditions.push(
+        sql`(
+          ${conventions.conventionNumber} ILIKE ${pattern}
+          OR ${conventions.description} ILIKE ${pattern}
+          OR ${conventions.contractor} ILIKE ${pattern}
+        )`
+      );
+    }
+    if (status && status !== "all") {
+      conditions.push(sql`${conventions.status} = ${status}`);
+    }
+    if (sector && sector !== "all") {
+      conditions.push(sql`${conventions.sector} = ${sector}`);
+    }
+    if (programme && programme !== "all") {
+      conditions.push(sql`${conventions.programme} = ${programme}`);
+    }
+    if (domain && domain !== "all") {
+      conditions.push(sql`${conventions.domain} = ${domain}`);
+    }
+
+    let whereClause: any = undefined;
+    for (const cond of conditions) {
+      whereClause = whereClause ? sql`${whereClause} AND ${cond}` : cond;
+    }
+
+    const whereClauseFinal = whereClause ?? sql`TRUE`;
+
+    const rows = await db
+      .select()
+      .from(conventions)
+      .where(whereClauseFinal)
+      .orderBy(
+        // Trier d'abord par année (partie après le '/') en ordre décroissant
+        sql`NULLIF(split_part(${conventions.conventionNumber}, '/', 2), '')::int DESC`,
+        // Puis par numéro (partie avant le '/') en ordre décroissant
+        sql`NULLIF(split_part(${conventions.conventionNumber}, '/', 1), '')::int DESC`,
+      )
+      .limit(safeLimit)
+      .offset(safeOffset);
+
+    // Keep response shape compatible with the client.
+    return rows.map((c: any) => ({
+      ...c,
+      province: parseArray(c.province as unknown as string),
+      partners: parseArray(c.partners as unknown as string),
+      attachments: parseArray(c.attachments as unknown as string),
+      delegatedProjectOwner: parseArray(c.delegatedProjectOwner as unknown as string),
+    })) as unknown as Convention[];
   }
 
   async getConvention(id: number): Promise<Convention | undefined> {
@@ -201,7 +331,7 @@ export class DatabaseStorage implements IStorage {
       partners: parseArray(c.partners as unknown as string),
       attachments: parseArray(c.attachments as unknown as string),
       delegatedProjectOwner: parseArray(c.delegatedProjectOwner as unknown as string),
-    };
+    } as unknown as Convention;
   }
 
   async createConvention(conventionData: InsertConvention, createdBy: string): Promise<Convention> {
@@ -274,15 +404,63 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchConventions(query: string): Promise<Convention[]> {
-    // This would need proper SQL search implementation
-    const allConventions = await this.getAllConventions();
-    const lowerQuery = query.toLowerCase();
-    return allConventions.filter(convention =>
-      convention.conventionNumber.toLowerCase().includes(lowerQuery) ||
-      convention.description.toLowerCase().includes(lowerQuery) ||
-      convention.contractor.toLowerCase().includes(lowerQuery) ||
-      (convention.amount != null && convention.amount.toString().includes(lowerQuery))
-    );
+    // Production-grade search:
+    // - Avoid loading ALL conventions in memory.
+    // - Perform case-insensitive filtering in Postgres (ILIKE).
+    // - Cap results to prevent response bloat and DoS.
+    const q = String(query ?? "").trim();
+    if (!q) return [];
+
+    // Prevent pathological patterns / huge payloads.
+    const MAX_QUERY_LEN = 100;
+    const safeQuery = q.slice(0, MAX_QUERY_LEN);
+    const pattern = `%${safeQuery}%`;
+    const MAX_RESULTS = 50;
+
+    const rows = await db
+      .select()
+      .from(conventions)
+      .where(
+        sql`(
+          ${conventions.conventionNumber} ILIKE ${pattern}
+          OR ${conventions.description} ILIKE ${pattern}
+          OR ${conventions.contractor} ILIKE ${pattern}
+          OR ${conventions.amount}::text ILIKE ${pattern}
+        )`
+      )
+      .limit(MAX_RESULTS);
+
+    // Keep response shape consistent with getAllConventions() by parsing JSON-string columns.
+    const parseArray = (val: unknown): string[] => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val as string[];
+      if (typeof val === "string") {
+        const s = val.trim();
+        if (!s) return [];
+        try {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed)) return parsed as string[];
+          return [String(parsed)];
+        } catch {
+          if (s.includes(",")) return s.split(",").map((p) => p.trim()).filter(Boolean);
+          return [s];
+        }
+      }
+      try {
+        const parsed = JSON.parse(String(val));
+        return Array.isArray(parsed) ? (parsed as string[]) : [String(parsed)];
+      } catch {
+        return [String(val)];
+      }
+    };
+
+    return rows.map((c) => ({
+      ...c,
+      province: parseArray(c.province as unknown as string),
+      partners: parseArray(c.partners as unknown as string),
+      attachments: parseArray(c.attachments as unknown as string),
+      delegatedProjectOwner: parseArray(c.delegatedProjectOwner as unknown as string),
+    })) as unknown as Convention[];
   }
 
   async getConventionsByStatus(status: string): Promise<Convention[]> {
