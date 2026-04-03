@@ -1,0 +1,383 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Edit, Trash2, CheckCircle, XCircle, Coins } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { Convention } from "@shared/schema";
+import { usePermissions } from "@/hooks/useAuth";
+
+interface FinancialContribution {
+  id: number;
+  conventionId: number;
+  partnerName: string;
+  year: string;
+  amountExpected: string | null;
+  amountPaid: string | null;
+  paymentDate: string | null;
+  isPaid: boolean; // #3 fix: real boolean
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Form state keeps isPaid as string since <Select> requires string values
+interface FormData {
+  partnerName: string;
+  year: string;
+  amountExpected: string;
+  amountPaid: string;
+  paymentDate: string;
+  isPaid: string; // "true" | "false" — converted to boolean before API call
+  notes: string;
+}
+
+interface FinancialTrackingProps {
+  convention: Convention;
+}
+
+export function FinancialTracking({ convention }: FinancialTrackingProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingContribution, setEditingContribution] = useState<FinancialContribution | null>(null);
+  const { userRole } = usePermissions();
+
+  const emptyForm: FormData = {
+    partnerName: "",
+    year: new Date().getFullYear().toString(),
+    amountExpected: "",
+    amountPaid: "",
+    paymentDate: "",
+    isPaid: "false",
+    notes: "",
+  };
+
+  const [formData, setFormData] = useState<FormData>(emptyForm);
+
+  const { data: contributions = [], isLoading } = useQuery<FinancialContribution[]>({
+    queryKey: [`/api/conventions/${convention.id}/financial-contributions`],
+  });
+
+  // Convert form data to API payload (isPaid string → boolean)
+  const toApiPayload = (data: FormData) => ({ ...data, isPaid: data.isPaid === "true" });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      const response = await fetch(`/api/conventions/${convention.id}/financial-contributions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(toApiPayload(data)),
+      });
+      if (!response.ok) throw new Error("خطأ في إنشاء المساهمة المالية");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/conventions/${convention.id}/financial-contributions`] });
+      setIsDialogOpen(false);
+      resetForm();
+      toast({ title: "نجح", description: "تم إضافة المساهمة المالية بنجاح" });
+    },
+    onError: () => {
+      toast({ title: "خطأ", description: "حدث خطأ أثناء إضافة المساهمة المالية", variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: FormData }) => {
+      const response = await fetch(`/api/financial-contributions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(toApiPayload(data)),
+      });
+      if (!response.ok) throw new Error("خطأ في تحديث المساهمة المالية");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/conventions/${convention.id}/financial-contributions`] });
+      setIsDialogOpen(false);
+      resetForm();
+      toast({ title: "نجح", description: "تم تحديث المساهمة المالية بنجاح" });
+    },
+    onError: () => {
+      toast({ title: "خطأ", description: "حدث خطأ أثناء تحديث المساهمة المالية", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/financial-contributions/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("خطأ في حذف المساهمة المالية");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/conventions/${convention.id}/financial-contributions`] });
+      toast({ title: "نجح", description: "تم حذف المساهمة المالية بنجاح" });
+    },
+    onError: () => {
+      toast({ title: "خطأ", description: "حدث خطأ أثناء حذف المساهمة المالية", variant: "destructive" });
+    },
+  });
+
+  const resetForm = () => {
+    setFormData(emptyForm);
+    setEditingContribution(null);
+  };
+
+  const handleEdit = (contribution: FinancialContribution) => {
+    setEditingContribution(contribution);
+    setFormData({
+      partnerName: contribution.partnerName,
+      year: contribution.year,
+      amountExpected: contribution.amountExpected || "",
+      amountPaid: contribution.amountPaid || "",
+      paymentDate: contribution.paymentDate || "",
+      // Convert boolean back to string for the Select component
+      isPaid: contribution.isPaid ? "true" : "false",
+      notes: contribution.notes || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingContribution) {
+      updateMutation.mutate({ id: editingContribution.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  const formatCurrency = (amount: string | null) => {
+    if (!amount) return "-";
+    return new Intl.NumberFormat("ar-MA", { style: "currency", currency: "MAD" }).format(parseFloat(amount));
+  };
+
+  const formatDate = (value: string | null) => {
+    if (!value) return "-";
+    const isoMatch = /^\d{4}-\d{2}-\d{2}$/;
+    const slashMatch = /^\d{4}[\/]-\d{2}[\/]-\d{2}$/;
+    const dmySlashMatch = /^\d{2}[\/]-?\d{2}[\/]-?\d{4}$/;
+    let year: number, month: number, day: number;
+    if (isoMatch.test(value) || slashMatch.test(value)) {
+      const parts = value.split(/[\/-]/);
+      year = Number(parts[0]); month = Number(parts[1]); day = Number(parts[2]);
+    } else if (dmySlashMatch.test(value)) {
+      const parts = value.split(/[\/-]/);
+      day = Number(parts[0]); month = Number(parts[1]); year = Number(parts[2]);
+    } else {
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) {
+        day = d.getUTCDate(); month = d.getUTCMonth() + 1; year = d.getUTCFullYear();
+      } else return value;
+    }
+    return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
+  };
+
+  const groupByYear = () => {
+    const grouped: { [year: string]: FinancialContribution[] } = {};
+    contributions.forEach((c) => {
+      if (!grouped[c.year]) grouped[c.year] = [];
+      grouped[c.year].push(c);
+    });
+    return grouped;
+  };
+
+  const groupedContributions = groupByYear();
+  const years = Object.keys(groupedContributions).sort((a, b) => b.localeCompare(a));
+
+  // #2 fix: partners is now a real array from jsonb — no JSON.parse needed
+  const availablePartners: string[] = Array.isArray(convention.partners) ? convention.partners as string[] : [];
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Coins className="h-5 w-5" />التتبع المالي للشركاء</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">جاري التحميل...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5" />
+            التتبع المالي للشركاء
+          </CardTitle>
+          {userRole !== "viewer" && (
+            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} size="sm">
+              <Plus className="h-4 w-4 ml-2" />
+              إضافة مساهمة
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {contributions.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">لا توجد مساهمات مالية مسجلة</p>
+        ) : (
+          <div className="space-y-6">
+            {years.map((year) => (
+              <div key={year} className="border rounded-lg p-4">
+                <h4 className="font-semibold mb-3 text-primary">السنة {year}</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-center">الشريك</TableHead>
+                      <TableHead className="text-center">المبلغ المتوقع</TableHead>
+                      <TableHead className="text-center">المبلغ المحول</TableHead>
+                      <TableHead className="text-center">تاريخ الدفع</TableHead>
+                      <TableHead className="text-center">الحالة</TableHead>
+                      <TableHead className="text-center">الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {groupedContributions[year].map((contribution) => (
+                      <TableRow key={contribution.id}>
+                        <TableCell className="font-medium text-center">{contribution.partnerName}</TableCell>
+                        <TableCell className="text-center">{formatCurrency(contribution.amountExpected)}</TableCell>
+                        <TableCell className="text-center">{formatCurrency(contribution.amountPaid)}</TableCell>
+                        <TableCell className="text-center">{formatDate(contribution.paymentDate)}</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center">
+                            {/* #3 fix: compare against real boolean */}
+                            {contribution.isPaid ? (
+                              <span className="inline-flex items-center text-green-600">
+                                <CheckCircle className="h-4 w-4 ml-1" />تم التحويل
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center text-yellow-600">
+                                <XCircle className="h-4 w-4 ml-1" />لم يتم التحويل
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {userRole !== "viewer" && (
+                            <div className="flex items-center justify-center gap-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(contribution)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => {
+                                if (confirm("هل أنت متأكد من حذف هذه المساهمة؟")) deleteMutation.mutate(contribution.id);
+                              }}>
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-screen-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-cairo">
+              {editingContribution ? "تعديل المساهمة المالية" : "إضافة مساهمة مالية"}
+            </DialogTitle>
+            <DialogDescription>أدخل تفاصيل المساهمة المالية للشريك</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="partnerName">الشريك *</Label>
+                <Select value={formData.partnerName} onValueChange={(v) => setFormData({ ...formData, partnerName: v })} required>
+                  <SelectTrigger><SelectValue placeholder="اختر الشريك" /></SelectTrigger>
+                  <SelectContent>
+                    {availablePartners.map((partner) => (
+                      <SelectItem key={partner} value={partner}>{partner}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="year">السنة *</Label>
+                <Input id="year" type="text" value={formData.year}
+                  onChange={(e) => setFormData({ ...formData, year: e.target.value })} placeholder="2025" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amountExpected">المبلغ المتوقع (درهم)</Label>
+                <Input id="amountExpected" type="number" step="0.01" value={formData.amountExpected}
+                  onChange={(e) => setFormData({ ...formData, amountExpected: e.target.value })} placeholder="0.00" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amountPaid">المبلغ المحول (درهم)</Label>
+                <Input id="amountPaid" type="number" step="0.01" value={formData.amountPaid}
+                  onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })} placeholder="0.00" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="paymentDate">تاريخ التحويل</Label>
+                <Input id="paymentDate" type="date" value={formData.paymentDate}
+                  onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="isPaid">حالة التحويل *</Label>
+                {/* Select uses string "true"/"false"; converted to boolean in toApiPayload() */}
+                <Select value={formData.isPaid} onValueChange={(v) => setFormData({ ...formData, isPaid: v })} required>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="false">لم يتم التحويل</SelectItem>
+                    <SelectItem value="true">تم التحويل</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="notes">ملاحظات</Label>
+                <Textarea id="notes" value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="أدخل أي ملاحظات إضافية..." rows={3} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>إلغاء</Button>
+              <Button type="submit">{editingContribution ? "تحديث" : "إضافة"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
