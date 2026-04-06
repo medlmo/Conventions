@@ -1,88 +1,97 @@
-## System Architecture
+# Conventions Management Platform
 
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Build Tool**: Vite for fast development and optimized builds
-- **UI Library**: shadcn/ui components with Radix UI primitives
-- **Styling**: Tailwind CSS with RTL (right-to-left) support for Arabic
-- **State Management**: TanStack Query (React Query) for server state
-- **Routing**: Wouter for lightweight client-side routing
-- **Forms**: React Hook Form with Zod validation
+Web application for managing conventions, financial contributions, administrative events, document exports, and secured file uploads.
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js framework
-- **Language**: TypeScript with ES modules
-- **API Design**: RESTful API with JSON responses
-- **Middleware**: Custom logging and error handling
-- **Development Server**: Hot reload with Vite integration
+## Tech Stack
 
-### Data Layer
-- **ORM**: Drizzle ORM for type-safe database operations
-- **Database**: PostgreSQL (configured via Neon serverless)
-- **Schema**: Shared TypeScript definitions between client and server
-- **Validation**: Zod schemas for runtime type checking
+- Frontend: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, Wouter
+- Backend: Node.js, Express, TypeScript, session-based authentication
+- Database: PostgreSQL with Drizzle ORM
+- Security: Helmet, API rate limiting, role-based authorization
 
-## Key Components
+## Main Features
 
-### Database Schema
-The system manages two main entities:
-- **Conventions**: Core business entity with fields for convention number, date, description, amount, status, operation type, and contractor
-- **Users**: Authentication entity with username and password
+- Convention CRUD with search and filtering
+- Convention statistics endpoints
+- Financial contribution tracking per convention
+- Administrative event tracking per convention
+- Authenticated file upload/download with validation and limits
+- Role-based access control for sensitive operations
 
-### API Endpoints
-- `GET /api/conventions` - Retrieve all conventions
-- `GET /api/conventions/:id` - Retrieve specific convention
-- `POST /api/conventions` - Create new convention
-- `PUT /api/conventions/:id` - Update existing convention
-- `DELETE /api/conventions/:id` - Delete convention
+## Project Structure
 
-### UI Components
-- Convention listing with data table
-- Form modal for creating/editing conventions
-- Delete confirmation dialog
-- Search and filtering capabilities
-- Status badge system with Arabic labels
-- Currency formatting for amounts
+- `client/`: React UI
+- `server/`: Express API and app bootstrap
+- `server/routes/`: API modules (`auth`, `users`, `conventions`, `stats`, `uploads`, etc.)
+- `shared/`: shared schema and types
+- `uploads/`: stored uploaded files (ignored by Git)
 
-## Data Flow
+## Prerequisites
 
-1. **Client Requests**: React components use TanStack Query hooks to fetch data
-2. **API Layer**: Express routes handle HTTP requests and validate input
-3. **Data Access**: Storage layer abstracts database operations
-4. **Database**: PostgreSQL stores convention and user data
-5. **Response**: JSON data flows back through the same path
+- Node.js 20+
+- PostgreSQL database
+- npm
 
-The application currently uses an in-memory storage implementation that can be easily swapped for a database-backed implementation.
+## Environment Variables
 
-## External Dependencies
+Create a `.env` file in the project root:
 
-### Core Dependencies
-- **@neondatabase/serverless**: PostgreSQL database connection
-- **drizzle-orm**: Type-safe ORM with Zod integration
-- **@tanstack/react-query**: Server state management
-- **@hookform/resolvers**: Form validation integration
-- **wouter**: Lightweight routing
+```env
+DATABASE_URL=postgres://user:password@host:5432/dbname
+SESSION_SECRET=replace-with-a-strong-secret
+TRUST_PROXY=loopback
+```
 
-### UI Dependencies
-- **@radix-ui/***: Accessible UI primitives
-- **tailwindcss**: Utility-first CSS framework
-- **class-variance-authority**: Component styling variants
-- **lucide-react**: Icon library
+Notes:
+- `DATABASE_URL` is required.
+- `SESSION_SECRET` should be changed in production.
+- `TRUST_PROXY` defaults to `loopback` if omitted.
 
-### Development Dependencies
-- **vite**: Build tool and dev server
-- **typescript**: Type checking
-- **tsx**: TypeScript execution for development
+## Install and Run
 
-## Deployment Strategy
+```bash
+npm install
+npm run db:push
+npm run dev
+```
 
-The application is configured for deployment on Replit with the following setup:
-- **Build Process**: Vite builds the client, esbuild bundles the server
-- **Production Server**: Serves static files and API from a single Node.js process
-- **Database**: PostgreSQL instance with connection via environment variables
-- **Port Configuration**: Runs on port 5000 (mapped to port 80 externally)
+The app runs on `http://localhost:5000`.
 
-### Environment Setup
-- Node.js 20 runtime environment
-- PostgreSQL 16 database module
-- Web module for static file serving
+## Available Scripts
+
+- `npm run dev`: start development server
+- `npm run build`: build frontend and backend into `dist/`
+- `npm run start`: run production build
+- `npm run check`: TypeScript type checking
+- `npm run db:push`: push Drizzle schema to database
+
+## API Overview
+
+Base API prefix: `/api`
+
+- Auth: `/api/auth`
+- Users: `/api/users`
+- Conventions: `/api/conventions`
+- Convention stats: `/api/conventions/stats`
+- Financial contributions:
+  - `/api/conventions/:conventionId/financial-contributions`
+  - `/api/financial-contributions`
+- Administrative events:
+  - `/api/conventions/:conventionId/administrative-events`
+  - `/api/administrative-events`
+- Uploads:
+  - `/api/upload` (upload/delete)
+  - `/uploads` (secured static file access)
+
+## Upload Rules
+
+- Max file size: 10 MB per file
+- Max files per request: 5
+- Allowed types: PDF, Word, Excel, and images
+- Upload/delete endpoints require authenticated users with `ADMIN` or `EDITOR` role
+
+## Production Notes
+
+- Build with `npm run build`, then run `npm run start`.
+- The server is configured to listen on port `5000`.
+- Keep `uploads/` out of version control (already ignored in `.gitignore`).
