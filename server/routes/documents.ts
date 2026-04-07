@@ -328,6 +328,7 @@ export function createDocumentsRouter(): Router {
       const { default: ExcelJS } = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Conventions");
+      worksheet.views = [{ rightToLeft: true }];
 
       worksheet.columns = [
         { header: "رقم الاتفاقية", key: "conventionNumber", width: 15 },
@@ -350,6 +351,22 @@ export function createDocumentsRouter(): Router {
         { header: "العمالة/الإقليم", key: "province", width: 20 },
         { header: "الشركاء", key: "partners", width: 50 },
       ];
+
+      // Header row styling
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 24;
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "1F4E78" }, // dark blue
+        };
+        cell.font = {
+          color: { argb: "FFFFFFFF" },
+          bold: true,
+        };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+      });
 
       conventions.forEach((c) => {
         worksheet.addRow({
@@ -374,6 +391,23 @@ export function createDocumentsRouter(): Router {
           description: c.description,
           validity: c.validity,
           jurisdiction: c.jurisdiction,
+        });
+      });
+
+      // Apply borders and RTL-friendly alignment to all populated cells
+      const thinBorder = {
+        top: { style: "thin" as const },
+        left: { style: "thin" as const },
+        bottom: { style: "thin" as const },
+        right: { style: "thin" as const },
+      };
+
+      worksheet.eachRow({ includeEmpty: true }, (row) => {
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          cell.border = thinBorder;
+          if (row.number !== 1) {
+            cell.alignment = { horizontal: "right", vertical: "middle" };
+          }
         });
       });
 
