@@ -15,17 +15,21 @@ export function createDocumentsRouter(): Router {
         return res.status(404).json({ message: "الاتفاقية غير موجودة" });
       }
 
-      const dateFr = new Date(convention.date).toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+      const parsedDate = convention.date ? new Date(convention.date) : null;
+      const dateFr =
+        parsedDate && !Number.isNaN(parsedDate.getTime())
+          ? parsedDate.toLocaleDateString("fr-FR", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })
+          : "غير محدد";
 
       const formatMad = (value: unknown): string => {
         if (value === null || value === undefined || value === "") return "غير محدد";
         const n = typeof value === "number" ? value : Number(String(value));
         if (!Number.isFinite(n)) return String(value);
-        return `${n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.م`;
+        return `${n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} م.د`;
       };
 
       const fields = [
@@ -242,7 +246,7 @@ export function createDocumentsRouter(): Router {
                         },
                         children: [
                           new Paragraph({
-                            alignment: AlignmentType.RIGHT,
+                            alignment: AlignmentType.CENTER,
                             bidirectional: true,
                             children: [
                               new TextRun({
