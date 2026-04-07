@@ -305,49 +305,79 @@ export class DatabaseStorage implements IStorage {
     const rows = await db
       .select({ status: conventions.status, count: sql<number>`COUNT(*)::int` })
       .from(conventions)
+      .where(sql`
+        ${conventions.status} IS NOT NULL
+        AND BTRIM(${conventions.status}) <> ''
+        AND BTRIM(${conventions.status}) <> 'غير محدد'
+      `)
       .groupBy(conventions.status);
-    return rows.map((r) => ({ status: r.status || "غير محدد", count: r.count }));
+    return rows.map((r) => ({ status: String(r.status).trim(), count: r.count }));
   }
 
   async getStatsBySector(): Promise<Array<{ sector: string; count: number }>> {
     const rows = await db
       .select({ sector: conventions.sector, count: sql<number>`COUNT(*)::int` })
       .from(conventions)
+      .where(sql`
+        ${conventions.sector} IS NOT NULL
+        AND BTRIM(${conventions.sector}) <> ''
+        AND BTRIM(${conventions.sector}) <> 'غير محدد'
+      `)
       .groupBy(conventions.sector);
-    return rows.map((r) => ({ sector: (r.sector || "غير محدد").trim().replace(/\s+/g, " "), count: r.count }));
+    return rows.map((r) => ({ sector: String(r.sector).trim().replace(/\s+/g, " "), count: r.count }));
   }
 
   async getStatsBySectorCost(): Promise<Array<{ sector: string; amount: number }>> {
     const rows = await db
       .select({ sector: conventions.sector, amount: sql<number>`COALESCE(SUM(${conventions.amount}::numeric), 0)` })
       .from(conventions)
+      .where(sql`
+        ${conventions.sector} IS NOT NULL
+        AND BTRIM(${conventions.sector}) <> ''
+        AND BTRIM(${conventions.sector}) <> 'غير محدد'
+      `)
       .groupBy(conventions.sector);
-    return rows.map((r) => ({ sector: (r.sector || "غير محدد").trim().replace(/\s+/g, " "), amount: Number(r.amount) }));
+    return rows.map((r) => ({ sector: String(r.sector).trim().replace(/\s+/g, " "), amount: Number(r.amount) }));
   }
 
   async getStatsByDomain(): Promise<Array<{ domain: string; count: number }>> {
     const rows = await db
       .select({ domain: conventions.domain, count: sql<number>`COUNT(*)::int` })
       .from(conventions)
+      .where(sql`
+        ${conventions.domain} IS NOT NULL
+        AND BTRIM(${conventions.domain}) <> ''
+        AND BTRIM(${conventions.domain}) <> 'غير محدد'
+      `)
       .groupBy(conventions.domain);
-    return rows.map((r) => ({ domain: r.domain || "غير محدد", count: r.count }));
+    return rows.map((r) => ({ domain: String(r.domain).trim(), count: r.count }));
   }
 
   async getStatsByYear(): Promise<Array<{ year: string; count: number }>> {
     const rows = await db
       .select({ year: conventions.year, count: sql<number>`COUNT(*)::int` })
       .from(conventions)
+      .where(sql`
+        ${conventions.year} IS NOT NULL
+        AND BTRIM(${conventions.year}) <> ''
+        AND BTRIM(${conventions.year}) <> 'غير محدد'
+      `)
       .groupBy(conventions.year)
       .orderBy(conventions.year);
-    return rows.map((r) => ({ year: r.year || "غير محدد", count: r.count }));
+    return rows.map((r) => ({ year: String(r.year).trim(), count: r.count }));
   }
 
   async getStatsByProgramme(): Promise<Array<{ programme: string; count: number }>> {
     const rows = await db
       .select({ programme: conventions.programme, count: sql<number>`COUNT(*)::int` })
       .from(conventions)
+      .where(sql`
+        ${conventions.programme} IS NOT NULL
+        AND BTRIM(${conventions.programme}) <> ''
+        AND BTRIM(${conventions.programme}) <> 'غير محدد'
+      `)
       .groupBy(conventions.programme);
-    return rows.map((r) => ({ programme: r.programme || "غير محدد", count: r.count }));
+    return rows.map((r) => ({ programme: String(r.programme).trim(), count: r.count }));
   }
 
   async getStatsByProvince(): Promise<Array<{ province: string; count: number }>> {
@@ -358,6 +388,8 @@ export class DatabaseStorage implements IStorage {
         CASE WHEN province IS NOT NULL AND jsonb_typeof(province) = 'array'
           THEN province ELSE '[]'::jsonb END
       ) AS p(province)
+      WHERE BTRIM(p.province) <> ''
+        AND BTRIM(p.province) <> 'غير محدد'
       GROUP BY p.province
       ORDER BY count DESC
     `);
