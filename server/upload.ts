@@ -19,19 +19,10 @@ const allowedExtensions = new Set([
   ".pdf",
   ".doc",
   ".docx",
-  ".xls",
-  ".xlsx",
-  ".jpg",
-  ".png",
-  ".gif",
 ]);
 
 const fileSignature = {
   pdf: "%PDF-",
-  png: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  jpg: Buffer.from([0xff, 0xd8, 0xff]),
-  gif87a: Buffer.from("GIF87a", "ascii"),
-  gif89a: Buffer.from("GIF89a", "ascii"),
   zip: Buffer.from([0x50, 0x4b, 0x03, 0x04]), // "PK.."
   ole: Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]), // OLE compound file
 } as const;
@@ -48,27 +39,14 @@ function detectFileFromMagicBytes(buffer: Buffer, normalizedExt: string): Detect
     return { extension: ".pdf", mime: "application/pdf" };
   }
 
-  // Images
-  if (normalizedExt === ".png" && startsWith(buffer, fileSignature.png)) {
-    return { extension: ".png", mime: "image/png" };
-  }
-  if (normalizedExt === ".jpg" && startsWith(buffer, fileSignature.jpg)) {
-    return { extension: ".jpg", mime: "image/jpeg" };
-  }
-  if (normalizedExt === ".gif" && (startsWith(buffer, fileSignature.gif87a) || startsWith(buffer, fileSignature.gif89a))) {
-    return { extension: ".gif", mime: "image/gif" };
+  // ZIP-based Office (docx)
+  if (normalizedExt === ".docx" && startsWith(buffer, fileSignature.zip)) {
+    return { extension: ".docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
   }
 
-  // ZIP-based Office (docx/xlsx)
-  if ((normalizedExt === ".docx" || normalizedExt === ".xlsx") && startsWith(buffer, fileSignature.zip)) {
-    if (normalizedExt === ".docx") return { extension: ".docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
-    return { extension: ".xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
-  }
-
-  // OLE-based Office (doc/xls)
-  if ((normalizedExt === ".doc" || normalizedExt === ".xls") && startsWith(buffer, fileSignature.ole)) {
-    if (normalizedExt === ".doc") return { extension: ".doc", mime: "application/msword" };
-    return { extension: ".xls", mime: "application/vnd.ms-excel" };
+  // OLE-based Office (doc)
+  if (normalizedExt === ".doc" && startsWith(buffer, fileSignature.ole)) {
+    return { extension: ".doc", mime: "application/msword" };
   }
 
   return null;
@@ -84,7 +62,7 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
 
   // Reject early by extension. Content is verified later using magic bytes.
   if (!allowedExtensions.has(ext)) {
-    return cb(new Error('نوع الملف غير مسموح. يرجى رفع ملفات PDF, Word, Excel أو الصور فقط.'));
+    return cb(new Error('نوع الملف غير مسموح. يرجى رفع ملفات PDF, Word'));
   }
 
   cb(null, true);

@@ -62,6 +62,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
       executionType: "",
       validity: "",
       jurisdiction: undefined,
+      conventionType: undefined,
     },
   });
 
@@ -223,6 +224,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         programme: convention.programme || "",
         validity: convention.validity || "",
         jurisdiction: (convention.jurisdiction as "منقول" | "ذاتي" | "مشترك") || undefined,
+        conventionType: (convention.conventionType as "اتفاقية شراكة" | "اتفاقية خاصة" | "ملحق تعديلي" | "اتفاقية اطار") || undefined,
       });
       setUploadedFiles(
         (typeof convention.attachments === "string"
@@ -255,6 +257,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
         executionType: "",
         validity: "",
         jurisdiction: undefined,
+        conventionType: undefined,
       });
       setUploadedFiles([]);
     }
@@ -575,6 +578,30 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
 
               <FormField
                 control={form.control}
+                name="conventionType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>نوع الاتفاقية</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر نوع الاتفاقية" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="اتفاقية شراكة">اتفاقية شراكة</SelectItem>
+                        <SelectItem value="اتفاقية خاصة">اتفاقية خاصة</SelectItem>
+                        <SelectItem value="ملحق تعديلي">ملحق تعديلي</SelectItem>
+                        <SelectItem value="اتفاقية اطار">اتفاقية اطار</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="province"
                 render={({ field }) => (
                   <FormItem>
@@ -667,7 +694,7 @@ export function ConventionForm({ open, onOpenChange, convention }: ConventionFor
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                    accept=".pdf,.doc,.docx"
                     onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                     className="hidden"
                   />

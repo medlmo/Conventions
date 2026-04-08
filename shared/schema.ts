@@ -60,6 +60,7 @@ export const conventions = pgTable("conventions", {
   delegatedProjectOwner: jsonb("delegated_project_owner").$type<string[]>(), // #2 fix: jsonb array
   validity: text("validity"),
   jurisdiction: text("jurisdiction"),
+  conventionType: text("convention_type"),
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -92,6 +93,7 @@ export const insertConventionSchema = createInsertSchema(conventions).omit({
   }, z.array(z.string()).optional()),
   validity: z.string().optional(),
   jurisdiction: z.enum(["منقول", "ذاتي", "مشترك"]).optional(),
+  conventionType: z.enum(["اتفاقية شراكة", "اتفاقية خاصة", "ملحق تعديلي", "اتفاقية اطار"]).optional(),
 });
 
 export type InsertConvention = z.infer<typeof insertConventionSchema>;

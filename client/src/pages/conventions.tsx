@@ -863,6 +863,10 @@ export default function ConventionsPage() {
                     <p className="text-gray-900">{viewingConvention.session}</p>
                   </div>
                   <div className="text-right">
+                    <h4 className="font-medium text-gray-700">نوع الاتفاقية</h4>
+                    <p className="text-gray-900">{viewingConvention.conventionType || "غير محدد"}</p>
+                  </div>
+                  <div className="text-right">
                     <h4 className="font-medium text-gray-700">القطاع</h4>
                     <p className="text-gray-900">{viewingConvention.sector}</p>
                   </div>
