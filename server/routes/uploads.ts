@@ -4,6 +4,7 @@ import rateLimit from "express-rate-limit";
 import { requireAuth, requireRole } from "../auth";
 import { deleteFile, persistUploads, upload, uploadsDir } from "../upload";
 import { UserRole } from "@shared/schema";
+import { audit, logger } from "../logger";
 
 export const uploadLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
@@ -19,7 +20,7 @@ export function createUploadsRouter(): Router {
   router.post("/", requireAuth, requireRole([UserRole.ADMIN, UserRole.EDITOR]), uploadLimiter, (req, res, next) => {
     upload.array("files", 5)(req, res, (err: any) => {
       if (err) {
-        console.error("Multer error:", err);
+        logger.warn({ err }, "Multer upload error");
         if (err.code === "LIMIT_FILE_SIZE") {
           return res.status(400).json({
             message: "الملف كبير جداً. الحد الأقصى هو 10 ميجابايت.",
@@ -56,6 +57,10 @@ export function createUploadsRouter(): Router {
         return res.status(400).json({ message: "لم يتم رفع أي ملفات" });
       }
       const uploadedFiles = await persistUploads(files);
+      audit("upload.files", req.user!.id, {
+        count: uploadedFiles.length,
+        filenames: uploadedFiles.map((f) => f.filename),
+      });
       res.json({ files: uploadedFiles });
     } catch (error) {
       const code = (error as any)?.code;
@@ -71,7 +76,7 @@ export function createUploadsRouter(): Router {
           error: "MISSING_BUFFER",
         });
       }
-      console.error("Error uploading files:", error);
+      logger.error({ err: error }, "Error uploading files");
       return res.status(500).json({ message: "خطأ في رفع الملفات" });
     }
   });
@@ -83,9 +88,10 @@ export function createUploadsRouter(): Router {
       if (!ok) {
         return res.status(404).json({ message: "الملف غير موجود أو غير صالح" });
       }
+      audit("upload.delete", req.user!.id, { filename });
       return res.json({ message: "تم حذف الملف بنجاح" });
     } catch (error) {
-      console.error("Error deleting file:", error);
+      logger.error({ err: error }, "Error deleting file");
       res.status(500).json({ message: "خطأ في حذف الملف" });
     }
   });

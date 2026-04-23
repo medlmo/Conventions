@@ -3,6 +3,7 @@ import { storage } from "../storage";
 import { requireAuth, requireRole } from "../auth";
 import { insertConventionSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
+import { audit, logger } from "../logger";
 
 export function createConventionsRouter(): Router {
   const router = Router();
@@ -22,7 +23,7 @@ export function createConventionsRouter(): Router {
       const conventions = await storage.getConventions({ search, status, sector, programme, domain, limit, offset });
       res.json(conventions);
     } catch (error) {
-      console.error("Error fetching conventions:", error);
+      logger.error({ err: error }, "Error fetching conventions");
       res.status(500).json({ message: "خطأ في استرجاع الاتفاقيات" });
     }
   });
@@ -33,7 +34,7 @@ export function createConventionsRouter(): Router {
       const conventions = await storage.searchConventions(req.params.query);
       res.json(conventions);
     } catch (error) {
-      console.error("Error searching conventions:", error);
+      logger.error({ err: error }, "Error searching conventions");
       res.status(500).json({ message: "خطأ في البحث" });
     }
   });
@@ -51,7 +52,7 @@ export function createConventionsRouter(): Router {
       }
       res.json(convention);
     } catch (error) {
-      console.error("Error fetching convention:", error);
+      logger.error({ err: error }, "Error fetching convention");
       res.status(500).json({ message: "خطأ في استرجاع الاتفاقية" });
     }
   });
@@ -61,12 +62,13 @@ export function createConventionsRouter(): Router {
     try {
       const validatedData = insertConventionSchema.parse(req.body);
       const convention = await storage.createConvention(validatedData, req.user!.id);
+      audit("convention.create", req.user!.id, { conventionId: convention.id });
       res.status(201).json(convention);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
       }
-      console.error("Error creating convention:", error);
+      logger.error({ err: error }, "Error creating convention");
       res.status(500).json({ message: "خطأ في إنشاء الاتفاقية" });
     }
   });
@@ -83,12 +85,13 @@ export function createConventionsRouter(): Router {
       if (!convention) {
         return res.status(404).json({ message: "الاتفاقية غير موجودة" });
       }
+      audit("convention.update", req.user!.id, { conventionId: id, changes: Object.keys(validatedData) });
       res.json(convention);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
       }
-      console.error("Error updating convention:", error);
+      logger.error({ err: error }, "Error updating convention");
       res.status(500).json({ message: "خطأ في تحديث الاتفاقية" });
     }
   });
@@ -104,9 +107,10 @@ export function createConventionsRouter(): Router {
       if (!deleted) {
         return res.status(404).json({ message: "الاتفاقية غير موجودة" });
       }
+      audit("convention.delete", req.user!.id, { conventionId: id });
       res.json({ message: "تم حذف الاتفاقية بنجاح" });
     } catch (error) {
-      console.error("Error deleting convention:", error);
+      logger.error({ err: error }, "Error deleting convention");
       res.status(500).json({ message: "خطأ في حذف الاتفاقية" });
     }
   });

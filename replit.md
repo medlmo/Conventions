@@ -19,7 +19,7 @@ This is a full-stack web application built for managing conventions (اتفاق�
 - **Runtime**: Node.js with Express.js framework
 - **Language**: TypeScript with ES modules
 - **API Design**: RESTful API with JSON responses
-- **Middleware**: Custom logging and error handling
+- **Middleware**: Pino structured logging (HTTP + audit trail) and error handling
 - **Development Server**: Hot reload with Vite integration
 
 ### Data Layer

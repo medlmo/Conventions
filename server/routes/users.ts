@@ -3,6 +3,7 @@ import { storage } from "../storage";
 import { requireAuth, requireRole } from "../auth";
 import { createUserSchema, updateUserSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
+import { audit, logger } from "../logger";
 
 export function createUsersRouter(): Router {
   const router = Router();
@@ -17,12 +18,12 @@ export function createUsersRouter(): Router {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        isActive: user.isActive, // now a real boolean
+        isActive: user.isActive,
         createdAt: user.createdAt,
       }));
       res.json(safeUsers);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      logger.error({ err: error }, "Error fetching users");
       res.status(500).json({ message: "خطأ في استرجاع المستخدمين" });
     }
   });
@@ -31,6 +32,7 @@ export function createUsersRouter(): Router {
     try {
       const userData = createUserSchema.parse(req.body);
       const user = await storage.createUser(userData);
+      audit("user.create", req.user!.id, { targetUserId: user.id, username: user.username, role: user.role });
       res.status(201).json({
         id: user.id,
         username: user.username,
@@ -44,7 +46,7 @@ export function createUsersRouter(): Router {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
       }
-      console.error("Error creating user:", error);
+      logger.error({ err: error }, "Error creating user");
       res.status(500).json({ message: "خطأ في إنشاء المستخدم" });
     }
   });
@@ -52,12 +54,12 @@ export function createUsersRouter(): Router {
   router.put("/:id", requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
     try {
       const { id } = req.params;
-      // Use updateUserSchema which includes isActive as boolean
       const userData = updateUserSchema.parse(req.body);
       const updatedUser = await storage.updateUser(id, userData);
       if (!updatedUser) {
         return res.status(404).json({ message: "المستخدم غير موجود" });
       }
+      audit("user.update", req.user!.id, { targetUserId: id, changes: Object.keys(userData) });
       res.json({
         id: updatedUser.id,
         username: updatedUser.username,
@@ -71,7 +73,7 @@ export function createUsersRouter(): Router {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
       }
-      console.error("Error updating user:", error);
+      logger.error({ err: error }, "Error updating user");
       res.status(500).json({ message: "خطأ في تحديث المستخدم" });
     }
   });
@@ -86,9 +88,10 @@ export function createUsersRouter(): Router {
       if (!deleted) {
         return res.status(404).json({ message: "المستخدم غير موجود" });
       }
+      audit("user.delete", req.user!.id, { targetUserId: id });
       res.json({ message: "تم حذف المستخدم بنجاح" });
     } catch (error) {
-      console.error("Error deleting user:", error);
+      logger.error({ err: error }, "Error deleting user");
       res.status(500).json({ message: "خطأ في حذف المستخدم" });
     }
   });
