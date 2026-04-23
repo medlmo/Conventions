@@ -4,7 +4,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/useAuth";
 import { loginSchema, type LoginRequest } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -54,15 +61,15 @@ export default function LoginPage() {
           <h1 className="text-3xl font-cairo font-bold text-gray-900 mb-2">
             نظام إدارة الاتفاقيات
           </h1>
-          <p className="text-gray-600">
-            قم بتسجيل الدخول للوصول إلى النظام
-          </p>
+          <p className="text-gray-600">قم بتسجيل الدخول للوصول إلى النظام</p>
         </div>
 
         {/* Login Card */}
         <Card className="shadow-xl border-0">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-xl text-center font-cairo">تسجيل الدخول</CardTitle>
+            <CardTitle className="text-xl text-center font-cairo">
+              تسجيل الدخول
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {error && (
@@ -73,7 +80,10 @@ export default function LoginPage() {
             )}
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="username"
@@ -129,7 +139,9 @@ export default function LoginPage() {
 
             {/* Demo Credentials Info */}
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">حسابات تجريبية:</h4>
+              <h4 className="font-medium text-gray-900 mb-2">
+                حسابات تجريبية:
+              </h4>
               <div className="space-y-2 text-sm text-gray-600">
                 <div>
                   <strong>مدير النظام:</strong> admin / admin123
@@ -148,7 +160,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            © 2024 نظام إدارة الاتفاقيات. جميع الحقوق محفوظة.
+            © 2026 نظام إدارة الاتفاقيات. جميع الحقوق محفوظة.
           </p>
         </div>
       </div>
