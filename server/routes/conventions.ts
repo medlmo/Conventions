@@ -28,17 +28,6 @@ export function createConventionsRouter(): Router {
     }
   });
 
-  // GET /api/conventions/search/:query
-  router.get("/search/:query", requireAuth, async (req, res) => {
-    try {
-      const conventions = await storage.searchConventions(req.params.query);
-      res.json(conventions);
-    } catch (error) {
-      logger.error({ err: error }, "Error searching conventions");
-      res.status(500).json({ message: "خطأ في البحث" });
-    }
-  });
-
   // GET /api/conventions/:id
   router.get("/:id", requireAuth, async (req, res) => {
     try {
@@ -81,11 +70,30 @@ export function createConventionsRouter(): Router {
         return res.status(400).json({ message: "معرف الاتفاقية غير صحيح" });
       }
       const validatedData = insertConventionSchema.partial().parse(req.body);
-      const convention = await storage.updateConvention(id, validatedData);
-      if (!convention) {
+
+      // Capture state before update for audit trail
+      const before = await storage.getConvention(id);
+      if (!before) {
         return res.status(404).json({ message: "الاتفاقية غير موجودة" });
       }
-      audit("convention.update", req.user!.id, { conventionId: id, changes: Object.keys(validatedData) });
+
+      const convention = await storage.updateConvention(id, validatedData);
+
+      // Build diff of changed fields with before/after values
+      const sensitiveFields = ["amount", "contribution", "status", "contractor", "conventionNumber"];
+      const diff: Record<string, { before: unknown; after: unknown }> = {};
+      for (const key of Object.keys(validatedData) as (keyof typeof validatedData)[]) {
+        const beforeVal = (before as any)[key];
+        const afterVal = (validatedData as any)[key];
+        if (String(beforeVal) !== String(afterVal)) {
+          diff[key] = {
+            before: sensitiveFields.includes(key) ? beforeVal : "[changed]",
+            after: sensitiveFields.includes(key) ? afterVal : "[changed]",
+          };
+        }
+      }
+
+      audit("convention.update", req.user!.id, { conventionId: id, diff });
       res.json(convention);
     } catch (error) {
       if (error instanceof z.ZodError) {

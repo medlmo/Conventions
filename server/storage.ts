@@ -47,7 +47,6 @@ export interface IStorage {
   createConvention(convention: InsertConvention, createdBy: string): Promise<Convention>;
   updateConvention(id: number, convention: Partial<InsertConvention>): Promise<Convention | undefined>;
   deleteConvention(id: number): Promise<boolean>;
-  searchConventions(query: string): Promise<Convention[]>;
   getConventionsByStatus(status: string): Promise<Convention[]>;
   getConventionsByDateRange(fromDate: string, toDate: string): Promise<Convention[]>;
 
@@ -256,23 +255,6 @@ export class DatabaseStorage implements IStorage {
   async deleteConvention(id: number): Promise<boolean> {
     const result = await db.delete(conventions).where(eq(conventions.id, id));
     return (result.rowCount || 0) > 0;
-  }
-
-  async searchConventions(query: string): Promise<Convention[]> {
-    const q = String(query ?? "").trim();
-    if (!q) return [];
-    const safeQuery = q.slice(0, 100);
-    const pattern = `%${safeQuery}%`;
-    return await db
-      .select()
-      .from(conventions)
-      .where(sql`(
-        ${conventions.conventionNumber} ILIKE ${pattern}
-        OR ${conventions.description} ILIKE ${pattern}
-        OR ${conventions.contractor} ILIKE ${pattern}
-        OR ${conventions.amount}::text ILIKE ${pattern}
-      )`)
-      .limit(50) as Convention[];
   }
 
   async getConventionsByStatus(status: string): Promise<Convention[]> {
