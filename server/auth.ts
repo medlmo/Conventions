@@ -3,6 +3,8 @@ import connectPg from "connect-pg-simple";
 import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
+import { logger } from "./logger";
+import { securityEvent } from "./security";
 
 // Extend Express Request type to include user
 declare module "express-session" {
@@ -20,8 +22,25 @@ declare global {
   }
 }
 
+const DEFAULT_SECRET = "default-secret-key-change-in-production";
+
 export function getSession() {
-  const sessionTtl =  24 * 60 * 60 * 1000; // 1 day
+  const secret = process.env.SESSION_SECRET || DEFAULT_SECRET;
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // Fail loudly if running in production with the default secret
+  if (isProduction && secret === DEFAULT_SECRET) {
+    securityEvent("config.insecure_session_secret", {
+      message: "SESSION_SECRET is not set — using insecure default in production",
+    });
+    throw new Error("SESSION_SECRET environment variable must be set in production");
+  }
+
+  if (!isProduction && secret === DEFAULT_SECRET) {
+    logger.warn("SESSION_SECRET is not set — using insecure default (acceptable in dev only)");
+  }
+
+  const sessionTtl = 24 * 60 * 60 * 1000; // 1 day
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
@@ -29,15 +48,15 @@ export function getSession() {
     ttl: sessionTtl,
     tableName: "sessions",
   });
-  
+
   return session({
-    secret: process.env.SESSION_SECRET || "default-secret-key-change-in-production",
+    secret,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // Set to true in production with HTTPS
+      secure: isProduction,   // HTTPS only in production
       sameSite: "strict",
       maxAge: sessionTtl,
     },
@@ -59,7 +78,7 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.error("Auth error:", error);
+    logger.error({ err: error }, "Auth middleware error");
     res.status(500).json({ message: "خطأ في التحقق من الهوية" });
   }
 };
