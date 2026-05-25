@@ -47,18 +47,28 @@ export function createAuthRouter(): Router {
 
       // Successful login — reset failure counter
       clearFailedLogins(username);
-      req.session.userId = user.id;
-      audit("auth.login.success", user.id, { username: user.username, role: user.role, ip: req.ip });
 
-      res.json({
-        user: {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-        },
+      // Regenerate session ID to prevent session fixation attacks.
+      // The old session ID is invalidated and a fresh one is issued.
+      req.session.regenerate((err) => {
+        if (err) {
+          logger.error({ err }, "Session regeneration failed");
+          return res.status(500).json({ message: "خطأ في تسجيل الدخول" });
+        }
+
+        req.session.userId = user.id;
+        audit("auth.login.success", user.id, { username: user.username, role: user.role, ip: req.ip });
+
+        res.json({
+          user: {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+          },
+        });
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
