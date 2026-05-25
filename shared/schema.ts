@@ -189,6 +189,8 @@ export const loginSchema = z.object({
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+/** User object with the password hash removed — safe to pass to routes, logs, and the client. */
+export type SafeUser = Omit<User, "password">;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type CreateUser = z.infer<typeof createUserSchema>;
 export type UpdateUser = z.infer<typeof updateUserSchema>;

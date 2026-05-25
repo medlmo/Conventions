@@ -4,6 +4,7 @@ import {
   financialContributions,
   administrativeEvents,
   type User,
+  type SafeUser,
   type UpsertUser,
   type Convention,
   type InsertConvention,
@@ -14,6 +15,12 @@ import {
   type InsertAdministrativeEvent,
   UserRole,
 } from "@shared/schema";
+
+/** Strip the password hash before leaving the storage layer. */
+function stripPassword(user: User): SafeUser {
+  const { password: _pw, ...safe } = user;
+  return safe;
+}
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -22,15 +29,15 @@ import { randomUUID } from "crypto"; // #4 fix
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
-  createUser(user: CreateUser): Promise<User>;
-  updateUser(id: string, user: Partial<UpsertUser>): Promise<User | undefined>;
+  // User operations — all return SafeUser (no password hash)
+  getUser(id: string): Promise<SafeUser | undefined>;
+  getUserByUsername(username: string): Promise<SafeUser | undefined>;
+  upsertUser(user: UpsertUser): Promise<SafeUser>;
+  createUser(user: CreateUser): Promise<SafeUser>;
+  updateUser(id: string, user: Partial<UpsertUser>): Promise<SafeUser | undefined>;
   deleteUser(id: string): Promise<boolean>;
-  getAllUsers(): Promise<User[]>;
-  validateUser(username: string, password: string): Promise<User | null>;
+  getAllUsers(): Promise<SafeUser[]>;
+  validateUser(username: string, password: string): Promise<SafeUser | null>;
 
   // Convention methods
   getAllConventions(): Promise<Convention[]>;
@@ -75,17 +82,17 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // User operations
-  async getUser(id: string): Promise<User | undefined> {
+  async getUser(id: string): Promise<SafeUser | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return user ? stripPassword(user) : undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByUsername(username: string): Promise<SafeUser | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    return user ? stripPassword(user) : undefined;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async upsertUser(userData: UpsertUser): Promise<SafeUser> {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     const { password: _password, ...rest } = userData;
     const [user] = await db
@@ -96,12 +103,11 @@ export class DatabaseStorage implements IStorage {
         set: { ...rest, password: hashedPassword, updatedAt: new Date() },
       })
       .returning();
-    return user;
+    return stripPassword(user);
   }
 
-  async createUser(userData: CreateUser): Promise<User> {
+  async createUser(userData: CreateUser): Promise<SafeUser> {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
-    // #4 fix: use crypto.randomUUID() — no collision risk, no deprecated .substr()
     const [user] = await db
       .insert(users)
       .values({
@@ -114,10 +120,10 @@ export class DatabaseStorage implements IStorage {
         email: userData.email,
       })
       .returning();
-    return user;
+    return stripPassword(user);
   }
 
-  async updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined> {
+  async updateUser(id: string, userData: Partial<UpsertUser>): Promise<SafeUser | undefined> {
     const passwordUpdate =
       userData && Object.prototype.hasOwnProperty.call(userData, "password") && typeof userData.password === "string"
         ? userData.password
@@ -134,7 +140,7 @@ export class DatabaseStorage implements IStorage {
       .set({ ...nextUserData, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
-    return user;
+    return user ? stripPassword(user) : undefined;
   }
 
   async deleteUser(id: string): Promise<boolean> {
@@ -142,16 +148,17 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(users.createdAt);
+  async getAllUsers(): Promise<SafeUser[]> {
+    const rows = await db.select().from(users).orderBy(users.createdAt);
+    return rows.map(stripPassword);
   }
 
-  async validateUser(username: string, password: string): Promise<User | null> {
+  async validateUser(username: string, password: string): Promise<SafeUser | null> {
+    // Fetch the full row internally to compare the hash — never returned outside this method.
     const [user] = await db.select().from(users).where(eq(users.username, username));
-    // #3 fix: isActive is now a real boolean
     if (!user || !user.isActive) return null;
     const isValid = await bcrypt.compare(password, user.password);
-    return isValid ? user : null;
+    return isValid ? stripPassword(user) : null;
   }
 
   // Convention operations

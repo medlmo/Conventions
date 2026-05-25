@@ -2,7 +2,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
-import type { User } from "@shared/schema";
+import type { SafeUser } from "@shared/schema";
 import { logger } from "./logger";
 import { securityEvent } from "./security";
 
@@ -10,14 +10,14 @@ import { securityEvent } from "./security";
 declare module "express-session" {
   interface SessionData {
     userId?: string;
-    user?: User;
+    user?: SafeUser;
   }
 }
 
 declare global {
   namespace Express {
     interface Request {
-      user?: User;
+      user?: SafeUser;
     }
   }
 }
