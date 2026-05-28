@@ -24,6 +24,9 @@ declare global {
 
 const DEFAULT_SECRET = "default-secret-key-change-in-production";
 
+/** Shared cookie name — used by session config and logout clearCookie so they always match. */
+export const SESSION_COOKIE_NAME = "sid";
+
 export function getSession() {
   const secret = process.env.SESSION_SECRET || DEFAULT_SECRET;
   const isProduction = process.env.NODE_ENV === "production";
@@ -50,6 +53,7 @@ export function getSession() {
   });
 
   return session({
+    name: SESSION_COOKIE_NAME,
     secret,
     store: sessionStore,
     resave: false,

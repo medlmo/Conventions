@@ -6,6 +6,7 @@ import { loginSchema } from "@shared/schema";
 import { z } from "zod";
 import { audit, logger } from "../logger";
 import { clearFailedLogins, getLockoutRemainingMs, recordFailedLogin, securityEvent } from "../security";
+import { SESSION_COOKIE_NAME } from "../auth";
 
 // Tighter limit: 5 attempts per 15-minute window per IP
 export const loginLimiter = rateLimit({
@@ -85,13 +86,17 @@ export function createAuthRouter(): Router {
     }
   });
 
-  router.post("/logout", (req, res) => {
+  router.post("/logout", requireAuth, (req, res) => {
     const userId = req.session.userId;
     req.session.destroy((err) => {
       if (err) {
         logger.error({ err }, "Session destroy error");
         return res.status(500).json({ message: "خطأ في تسجيل الخروج" });
       }
+      // Explicitly clear the cookie so it is removed from the browser
+      // immediately — not just left to expire. Uses the same name constant
+      // as the session config to guarantee they always match.
+      res.clearCookie(SESSION_COOKIE_NAME, { path: "/" });
       audit("auth.logout", userId, { ip: req.ip });
       res.json({ message: "تم تسجيل الخروج بنجاح" });
     });
