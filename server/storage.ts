@@ -23,12 +23,16 @@ function stripPassword(user: User): SafeUser {
 }
 
 /**
- * Pre-computed bcrypt hash used as a timing-safe fallback in validateUser().
+ * Valid bcrypt hash used as a timing-safe fallback in validateUser().
  * When a username doesn't exist we still call bcrypt.compare() against this
- * dummy hash so the response time is indistinguishable from a real failed login
+ * hash so the response time is indistinguishable from a real failed login
  * (~100 ms), preventing username enumeration via timing side-channel.
+ *
+ * Generated synchronously at module load — bcrypt.hashSync guarantees a
+ * correctly structured hash that the library will fully compute against,
+ * unlike a hardcoded string which bcrypt may short-circuit if malformed.
  */
-const DUMMY_HASH = "$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345";
+const DUMMY_HASH = bcrypt.hashSync("__timing_dummy__", 10);
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -282,12 +286,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getConventionsByDateRange(fromDate: string, toDate: string): Promise<Convention[]> {
-    // Validate ISO 8601 date format (YYYY-MM-DD) before passing to SQL.
-    // Drizzle parameterises the values, but a malformed date still triggers
-    // an uncontrolled Postgres error that may expose internal details.
+    // 1. Format check — rejects anything that isn't YYYY-MM-DD.
     const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
     if (!ISO_DATE_RE.test(fromDate) || !ISO_DATE_RE.test(toDate)) {
       throw new Error("صيغة التاريخ غير صحيحة: يجب أن تكون YYYY-MM-DD");
+    }
+    // 2. Calendar validity check — rejects values like 2024-13-99 that pass
+    //    the regex but are not real dates and would cause a Postgres error.
+    const from = new Date(fromDate);
+    const to   = new Date(toDate);
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      throw new Error("قيمة التاريخ غير صحيحة");
+    }
+    // 3. Logical order check — prevents empty result sets from inverted ranges.
+    if (from > to) {
+      throw new Error("تاريخ البداية يجب أن يكون قبل أو يساوي تاريخ النهاية");
     }
     return await db
       .select()
