@@ -45,11 +45,10 @@ export function createAuthRouter(): Router {
         return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
       }
 
-      // Successful login — reset failure counter
-      await clearFailedLogins(username);
-
       // Regenerate session ID to prevent session fixation attacks.
       // The old session ID is invalidated and a fresh one is issued.
+      // clearFailedLogins is called only INSIDE the callback so the counter
+      // is reset exclusively when a valid session has actually been created.
       req.session.regenerate((err) => {
         if (err) {
           logger.error({ err }, "Session regeneration failed");
@@ -57,6 +56,13 @@ export function createAuthRouter(): Router {
         }
 
         req.session.userId = user.id;
+
+        // Session is established — now safe to clear the failure counter.
+        // Non-fatal if it fails: the stale record will expire on its own.
+        clearFailedLogins(username).catch((clearErr) => {
+          logger.error({ err: clearErr }, "Failed to clear login failures");
+        });
+
         audit("auth.login.success", user.id, { username: user.username, role: user.role, ip: req.ip });
 
         res.json({
