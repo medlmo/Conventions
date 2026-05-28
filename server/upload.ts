@@ -2,6 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { logger } from './logger';
 
 export const uploadsDir = process.env.UPLOAD_DIR
   ? path.resolve(process.env.UPLOAD_DIR)
@@ -161,7 +162,7 @@ export const deleteFile = (fileName: string): boolean => {
     fs.unlinkSync(fullPath);
     return true;
   } catch (error) {
-    console.error('Error deleting file:', error);
+    logger.error({ err: error }, "Error deleting file");
     return false;
   }
 };
