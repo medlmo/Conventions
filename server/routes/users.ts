@@ -54,12 +54,21 @@ export function createUsersRouter(): Router {
   router.put("/:id", requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
     try {
       const { id } = req.params;
-      const userData = updateUserSchema.parse(req.body);
-      const updatedUser = await storage.updateUser(id, userData);
+      const { role, ...profileFields } = updateUserSchema.parse(req.body);
+
+      // Update profile fields (role is structurally excluded from updateUser).
+      let updatedUser = await storage.updateUser(id, profileFields);
       if (!updatedUser) {
         return res.status(404).json({ message: "المستخدم غير موجود" });
       }
-      audit("user.update", req.user!.id, { targetUserId: id, changes: Object.keys(userData) });
+
+      // Role changes go through an explicit, auditable path.
+      if (role !== undefined) {
+        updatedUser = (await storage.setUserRole(id, role)) ?? updatedUser;
+        audit("user.role_change", req.user!.id, { targetUserId: id, newRole: role });
+      }
+
+      audit("user.update", req.user!.id, { targetUserId: id, changes: Object.keys(profileFields) });
       res.json({
         id: updatedUser.id,
         username: updatedUser.username,

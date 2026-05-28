@@ -1,3 +1,8 @@
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
+import bcrypt from "bcrypt";
 import {
   users,
   conventions,
@@ -32,12 +37,8 @@ function stripPassword(user: User): SafeUser {
  * correctly structured hash that the library will fully compute against,
  * unlike a hardcoded string which bcrypt may short-circuit if malformed.
  */
-const DUMMY_HASH = bcrypt.hashSync("__timing_dummy__", 10);
-import { db } from "./db";
-import { eq } from "drizzle-orm";
-import bcrypt from "bcrypt";
-import { sql } from "drizzle-orm";
-import { randomUUID } from "crypto"; // #4 fix
+const BCRYPT_ROUNDS = 12;
+const DUMMY_HASH = bcrypt.hashSync("__timing_dummy__", BCRYPT_ROUNDS);
 
 // Interface for storage operations
 export interface IStorage {
@@ -46,7 +47,10 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<SafeUser | undefined>;
   upsertUser(user: UpsertUser): Promise<SafeUser>;
   createUser(user: CreateUser): Promise<SafeUser>;
-  updateUser(id: string, user: Partial<UpsertUser>): Promise<SafeUser | undefined>;
+  /** Update profile fields only — role is intentionally excluded. Use setUserRole() for role changes. */
+  updateUser(id: string, user: Omit<Partial<UpsertUser>, "role">): Promise<SafeUser | undefined>;
+  /** Explicit, auditable role change — separate from general profile updates. */
+  setUserRole(id: string, role: string): Promise<SafeUser | undefined>;
   deleteUser(id: string): Promise<boolean>;
   getAllUsers(): Promise<SafeUser[]>;
   validateUser(username: string, password: string): Promise<SafeUser | null>;
@@ -105,7 +109,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<SafeUser> {
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const hashedPassword = await bcrypt.hash(userData.password, BCRYPT_ROUNDS);
     const { password: _password, ...rest } = userData;
     const [user] = await db
       .insert(users)
@@ -119,7 +123,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(userData: CreateUser): Promise<SafeUser> {
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const hashedPassword = await bcrypt.hash(userData.password, BCRYPT_ROUNDS);
     const [user] = await db
       .insert(users)
       .values({
@@ -135,21 +139,31 @@ export class DatabaseStorage implements IStorage {
     return stripPassword(user);
   }
 
-  async updateUser(id: string, userData: Partial<UpsertUser>): Promise<SafeUser | undefined> {
+  async updateUser(id: string, userData: Omit<Partial<UpsertUser>, "role">): Promise<SafeUser | undefined> {
     const passwordUpdate =
       userData && Object.prototype.hasOwnProperty.call(userData, "password") && typeof userData.password === "string"
         ? userData.password
         : undefined;
 
-    const { password: _password, ...rest } = userData as typeof userData & { password?: unknown };
-    const nextUserData: Partial<UpsertUser> = {
+    // Strip both password (re-hashed below) and role (must go through setUserRole).
+    const { password: _pw, role: _role, ...rest } = userData as typeof userData & { password?: unknown; role?: unknown };
+    const nextUserData: Omit<Partial<UpsertUser>, "role"> = {
       ...rest,
-      ...(passwordUpdate ? { password: await bcrypt.hash(passwordUpdate, 10) } : {}),
+      ...(passwordUpdate ? { password: await bcrypt.hash(passwordUpdate, BCRYPT_ROUNDS) } : {}),
     };
 
     const [user] = await db
       .update(users)
       .set({ ...nextUserData, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user ? stripPassword(user) : undefined;
+  }
+
+  async setUserRole(id: string, role: string): Promise<SafeUser | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ role, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
     return user ? stripPassword(user) : undefined;
