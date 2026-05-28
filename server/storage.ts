@@ -21,6 +21,14 @@ function stripPassword(user: User): SafeUser {
   const { password: _pw, ...safe } = user;
   return safe;
 }
+
+/**
+ * Pre-computed bcrypt hash used as a timing-safe fallback in validateUser().
+ * When a username doesn't exist we still call bcrypt.compare() against this
+ * dummy hash so the response time is indistinguishable from a real failed login
+ * (~100 ms), preventing username enumeration via timing side-channel.
+ */
+const DUMMY_HASH = "$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -156,9 +164,14 @@ export class DatabaseStorage implements IStorage {
   async validateUser(username: string, password: string): Promise<SafeUser | null> {
     // Fetch the full row internally to compare the hash — never returned outside this method.
     const [user] = await db.select().from(users).where(eq(users.username, username));
-    if (!user || !user.isActive) return null;
-    const isValid = await bcrypt.compare(password, user.password);
-    return isValid ? stripPassword(user) : null;
+
+    // Always run bcrypt.compare() — even for unknown/inactive accounts — so the response
+    // time is constant (~100 ms) and cannot be used to enumerate valid usernames.
+    const hashToCompare = user?.password ?? DUMMY_HASH;
+    const isValid = await bcrypt.compare(password, hashToCompare);
+
+    if (!user || !user.isActive || !isValid) return null;
+    return stripPassword(user);
   }
 
   // Convention operations
@@ -269,6 +282,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getConventionsByDateRange(fromDate: string, toDate: string): Promise<Convention[]> {
+    // Validate ISO 8601 date format (YYYY-MM-DD) before passing to SQL.
+    // Drizzle parameterises the values, but a malformed date still triggers
+    // an uncontrolled Postgres error that may expose internal details.
+    const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+    if (!ISO_DATE_RE.test(fromDate) || !ISO_DATE_RE.test(toDate)) {
+      throw new Error("صيغة التاريخ غير صحيحة: يجب أن تكون YYYY-MM-DD");
+    }
     return await db
       .select()
       .from(conventions)
