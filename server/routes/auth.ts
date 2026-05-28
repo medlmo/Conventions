@@ -28,7 +28,7 @@ export function createAuthRouter(): Router {
       const { username, password } = loginSchema.parse(req.body);
 
       // Check account lockout before hitting the DB
-      const remainingMs = getLockoutRemainingMs(username);
+      const remainingMs = await getLockoutRemainingMs(username);
       if (remainingMs > 0) {
         const remainingMin = Math.ceil(remainingMs / 60_000);
         securityEvent("auth.login.blocked_lockout", { username, ip: req.ip, remainingMin });
@@ -40,13 +40,13 @@ export function createAuthRouter(): Router {
       const user = await storage.validateUser(username, password);
 
       if (!user) {
-        const justLocked = recordFailedLogin(username, req.ip ?? "unknown");
+        const justLocked = await recordFailedLogin(username, req.ip ?? "unknown");
         audit("auth.login.failed", undefined, { username, ip: req.ip, justLocked });
         return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
       }
 
       // Successful login — reset failure counter
-      clearFailedLogins(username);
+      await clearFailedLogins(username);
 
       // Regenerate session ID to prevent session fixation attacks.
       // The old session ID is invalidated and a fresh one is issued.

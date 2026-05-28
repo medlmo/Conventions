@@ -3,6 +3,14 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Login attempts table — persistent, DB-backed account lockout
+export const loginAttempts = pgTable("login_attempts", {
+  username:    varchar("username").primaryKey(),
+  failures:    integer("failures").notNull().default(0),
+  lockedUntil: timestamp("locked_until"),           // null = not locked
+  lastFailure: timestamp("last_failure").notNull().default(sql`now()`),
+});
+
 // Session storage table for authentication
 export const sessions = pgTable(
   "sessions",

@@ -1,3 +1,6 @@
+import { db } from "./db";
+import { loginAttempts } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 
 // ---------------------------------------------------------------------------
@@ -12,72 +15,101 @@ export function securityEvent(
 }
 
 // ---------------------------------------------------------------------------
-// Account lockout (in-memory, per username)
-// After MAX_FAILURES consecutive failed logins the account is locked for
-// LOCKOUT_DURATION_MS.  The counter resets on a successful login.
+// Account lockout — PostgreSQL-backed
+//
+// Persists across restarts and works across multiple server instances.
+//
+// Sliding-window reset: if the last failure is older than FAILURE_WINDOW_MS
+// the counter is reset before incrementing, so stale attempts from days ago
+// do not accumulate toward the lockout threshold.
 // ---------------------------------------------------------------------------
 
-const MAX_FAILURES = 5;
+const MAX_FAILURES       = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const FAILURE_WINDOW_MS   = 30 * 60 * 1000; // 30 minutes — sliding window
 
-interface LockoutEntry {
-  failures: number;
-  lockedUntil: number | null; // epoch ms, null = not locked
-  lastFailure: number;        // epoch ms
-}
+/** Returns the remaining lock duration in ms (0 if not locked / expired). */
+export async function getLockoutRemainingMs(username: string): Promise<number> {
+  const [row] = await db
+    .select()
+    .from(loginAttempts)
+    .where(eq(loginAttempts.username, username));
 
-const lockoutMap = new Map<string, LockoutEntry>();
+  if (!row?.lockedUntil) return 0;
 
-function getEntry(username: string): LockoutEntry {
-  return lockoutMap.get(username) ?? { failures: 0, lockedUntil: null, lastFailure: 0 };
-}
-
-/** Returns the remaining lock duration in ms (0 if not locked). */
-export function getLockoutRemainingMs(username: string): number {
-  const entry = getEntry(username);
-  if (!entry.lockedUntil) return 0;
-  const remaining = entry.lockedUntil - Date.now();
+  const remaining = row.lockedUntil.getTime() - Date.now();
   if (remaining <= 0) {
-    lockoutMap.delete(username); // auto-expire
+    // Lock expired — clean up the row entirely
+    await db.delete(loginAttempts).where(eq(loginAttempts.username, username));
     return 0;
   }
   return remaining;
 }
 
-/** Call after a failed login attempt. Returns true if the account just got locked. */
-export function recordFailedLogin(username: string, ip: string): boolean {
-  const entry = getEntry(username);
-  entry.failures += 1;
-  entry.lastFailure = Date.now();
+/**
+ * Call after a failed login attempt.
+ * Returns true if the account just got locked.
+ *
+ * Sliding window: if the last failure is older than FAILURE_WINDOW_MS the
+ * counter resets, so sporadic old failures never accumulate indefinitely.
+ */
+export async function recordFailedLogin(username: string, ip: string): Promise<boolean> {
+  const [existing] = await db
+    .select()
+    .from(loginAttempts)
+    .where(eq(loginAttempts.username, username));
 
-  if (entry.failures >= MAX_FAILURES) {
-    entry.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
-    lockoutMap.set(username, entry);
+  const now = Date.now();
+
+  // Reset counter if last failure is outside the sliding window
+  const outsideWindow =
+    !existing ||
+    !existing.lastFailure ||
+    now - existing.lastFailure.getTime() > FAILURE_WINDOW_MS;
+
+  const currentFailures = outsideWindow ? 0 : (existing?.failures ?? 0);
+  const newFailures = currentFailures + 1;
+
+  const justLocked = newFailures >= MAX_FAILURES;
+  const lockedUntil = justLocked ? new Date(now + LOCKOUT_DURATION_MS) : null;
+
+  await db
+    .insert(loginAttempts)
+    .values({
+      username,
+      failures:    newFailures,
+      lockedUntil: lockedUntil ?? undefined,
+      lastFailure: new Date(now),
+    })
+    .onConflictDoUpdate({
+      target: loginAttempts.username,
+      set: {
+        failures:    newFailures,
+        lockedUntil: lockedUntil ?? undefined,
+        lastFailure: new Date(now),
+      },
+    });
+
+  if (justLocked) {
     securityEvent("account.locked", {
       username,
       ip,
-      failures: entry.failures,
-      lockedUntilIso: new Date(entry.lockedUntil).toISOString(),
+      failures: newFailures,
+      lockedUntilIso: lockedUntil!.toISOString(),
     });
-    return true;
-  }
-
-  lockoutMap.set(username, entry);
-
-  // Warn when getting close to lockout
-  if (entry.failures >= 3) {
+  } else if (newFailures >= 3) {
     securityEvent("auth.login.repeated_failures", {
       username,
       ip,
-      failures: entry.failures,
-      remainingBeforeLock: MAX_FAILURES - entry.failures,
+      failures: newFailures,
+      remainingBeforeLock: MAX_FAILURES - newFailures,
     });
   }
 
-  return false;
+  return justLocked;
 }
 
-/** Call after a successful login to reset the counter. */
-export function clearFailedLogins(username: string): void {
-  lockoutMap.delete(username);
+/** Call after a successful login to reset the failure counter. */
+export async function clearFailedLogins(username: string): Promise<void> {
+  await db.delete(loginAttempts).where(eq(loginAttempts.username, username));
 }
