@@ -71,7 +71,7 @@ app.use(httpLogger);
   try {
     await seedDatabase();
   } catch (error) {
-    console.log("Database seeding completed or skipped");
+    logger.info("Database seeding completed or skipped");
   }
   
   const server = await registerRoutes(app);

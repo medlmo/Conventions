@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { requireAuth } from "../auth";
+import { logger } from "../logger";
 
 export function createStatsRouter(): Router {
   const router = Router();
@@ -15,7 +16,7 @@ export function createStatsRouter(): Router {
       });
       res.json({ ...stats, totalValue: totalValueFormatted });
     } catch (error) {
-      console.error("Erreur stats globales:", error);
+      logger.error({ err: error }, "Erreur stats globales");
       res.status(500).json({ message: "Erreur statistiques globales" });
     }
   });
@@ -25,7 +26,7 @@ export function createStatsRouter(): Router {
       const result = await storage.getStatsBySector();
       res.json(result);
     } catch (error) {
-      console.error("Erreur stats by-sector:", error);
+      logger.error({ err: error }, "Erreur stats by-sector");
       res.status(500).json({ message: "Erreur statistiques secteur" });
     }
   });
@@ -35,7 +36,7 @@ export function createStatsRouter(): Router {
       const result = await storage.getStatsByStatus();
       res.json(result);
     } catch (error) {
-      console.error("Erreur stats by-status:", error);
+      logger.error({ err: error }, "Erreur stats by-status");
       res.status(500).json({ message: "Erreur statistiques statut" });
     }
   });
@@ -46,7 +47,7 @@ export function createStatsRouter(): Router {
       const result = raw.map(({ sector, amount }) => ({ sector, الكلفة: amount }));
       res.json(result);
     } catch (error) {
-      console.error("Erreur stats by-sector-cost:", error);
+      logger.error({ err: error }, "Erreur stats by-sector-cost");
       res.status(500).json({ message: "Erreur statistiques montant secteur" });
     }
   });
@@ -56,7 +57,7 @@ export function createStatsRouter(): Router {
       const result = await storage.getStatsByDomain();
       res.json(result);
     } catch (error) {
-      console.error("Erreur stats by-domain:", error);
+      logger.error({ err: error }, "Erreur stats by-domain");
       res.status(500).json({ message: "Erreur statistiques المجال" });
     }
   });
@@ -66,7 +67,7 @@ export function createStatsRouter(): Router {
       const result = await storage.getStatsByProvince();
       res.json(result);
     } catch (error) {
-      console.error("Erreur stats by-province:", error);
+      logger.error({ err: error }, "Erreur stats by-province");
       res.status(500).json({ message: "Erreur statistiques العمالة/الإقليم" });
     }
   });
@@ -77,7 +78,7 @@ export function createStatsRouter(): Router {
       const result = raw.map(({ year, count }) => ({ year, العدد: count }));
       res.json(result);
     } catch (error) {
-      console.error("Erreur stats by-year:", error);
+      logger.error({ err: error }, "Erreur stats by-year");
       res.status(500).json({ message: "Erreur statistiques السنة" });
     }
   });
@@ -87,7 +88,7 @@ export function createStatsRouter(): Router {
       const result = await storage.getStatsByProgramme();
       res.json(result);
     } catch (error) {
-      console.error("Erreur stats by-programme:", error);
+      logger.error({ err: error }, "Erreur stats by-programme");
       res.status(500).json({ message: "Erreur statistiques البرنامج" });
     }
   });

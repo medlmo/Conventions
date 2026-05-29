@@ -2,9 +2,10 @@ import { db } from "./db";
 import { users, conventions } from "@shared/schema";
 import { UserRole } from "@shared/schema";
 import bcrypt from "bcrypt";
+import { logger } from "./logger";
 
 async function seedDatabase() {
-  console.log("Seeding database...");
+  logger.info("Seeding database...");
 
   try {
     const defaultUsers = [
@@ -79,9 +80,9 @@ async function seedDatabase() {
       await db.insert(conventions).values(convention).onConflictDoNothing();
     }
 
-    console.log("Database seeded successfully!");
+    logger.info("Database seeded successfully!");
   } catch (error) {
-    console.error("Error seeding database:", error);
+    logger.error({ err: error }, "Error seeding database");
   }
 }
 
