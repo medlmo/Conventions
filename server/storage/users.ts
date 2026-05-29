@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
 import {
   users,
+  UserRole,
   type User,
   type SafeUser,
   type UpsertUser,
@@ -95,6 +96,10 @@ export async function updateUser(
 }
 
 export async function setUserRole(id: string, role: string): Promise<SafeUser | undefined> {
+  const validRoles = Object.values(UserRole) as string[];
+  if (!validRoles.includes(role)) {
+    throw new Error(`قيمة الدور غير صحيحة: "${role}". القيم المقبولة: ${validRoles.join(", ")}`);
+  }
   const [user] = await db
     .update(users)
     .set({ role, updatedAt: new Date() })
