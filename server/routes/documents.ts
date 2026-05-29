@@ -1,6 +1,23 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { requireAuth } from "../auth";
+import { logger } from "../logger";
+
+/** Reject non-positive-integer route params — returns NaN on invalid input. */
+function parseId(value: string): number {
+  const n = parseInt(value, 10);
+  return Number.isInteger(n) && n > 0 ? n : NaN;
+}
+
+/**
+ * Prevent Formula Injection (CSV/Excel injection).
+ * Excel and LibreOffice evaluate cell values starting with = + - @ as formulas.
+ * Stripping those leading characters neutralises =WEBSERVICE(), DDE payloads, etc.
+ */
+function sanitizeCell(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  return value.replace(/^[=+\-@\t\r]+/, "");
+}
 
 export function createDocumentsRouter(): Router {
   const router = Router();
@@ -8,7 +25,10 @@ export function createDocumentsRouter(): Router {
   // GET /api/conventions/:id/download — Word document
   router.get("/:id/download", requireAuth, async (req, res) => {
     try {
-      const conventionId = parseInt(req.params.id);
+      const conventionId = parseId(req.params.id);
+      if (isNaN(conventionId)) {
+        return res.status(400).json({ message: "معرف الاتفاقية غير صحيح" });
+      }
       const convention = await storage.getConvention(conventionId);
 
       if (!convention) {
@@ -317,7 +337,7 @@ export function createDocumentsRouter(): Router {
       );
       res.send(buffer);
     } catch (error) {
-      console.error("Error generating Word document:", error);
+      logger.error({ err: error }, "Error generating Word document");
       res.status(500).json({ message: "خطأ في إنشاء ملف Word" });
     }
   });
@@ -371,29 +391,32 @@ export function createDocumentsRouter(): Router {
       });
 
       conventions.forEach((c) => {
+        const delegated = Array.isArray(c.delegatedProjectOwner)
+          ? c.delegatedProjectOwner.join(", ")
+          : c.delegatedProjectOwner || "";
+        const province = Array.isArray(c.province) ? c.province.join(", ") : c.province;
+        const partners = Array.isArray(c.partners) ? c.partners.join(", ") : c.partners;
         worksheet.addRow({
-          conventionNumber: c.conventionNumber,
+          conventionNumber: sanitizeCell(c.conventionNumber),
           date: c.date ? new Date(c.date).toLocaleDateString("fr-FR") : "",
-          year: c.year,
-          session: c.session,
-          domain: c.domain,
-          conventionType: c.conventionType,
-          sector: c.sector,
-          decisionNumber: c.decisionNumber,
-          status: c.status,
-          amount: c.amount,
-          contribution: c.contribution,
-          contractor: c.contractor,
-          delegatedProjectOwner: Array.isArray(c.delegatedProjectOwner)
-            ? c.delegatedProjectOwner.join(", ")
-            : c.delegatedProjectOwner || "",
-          executionType: c.executionType,
-          programme: c.programme,
-          province: Array.isArray(c.province) ? c.province.join(", ") : c.province,
-          partners: Array.isArray(c.partners) ? c.partners.join(", ") : c.partners,
-          description: c.description,
-          validity: c.validity,
-          jurisdiction: c.jurisdiction,
+          year: sanitizeCell(c.year),
+          session: sanitizeCell(c.session),
+          domain: sanitizeCell(c.domain),
+          conventionType: sanitizeCell(c.conventionType),
+          sector: sanitizeCell(c.sector),
+          decisionNumber: sanitizeCell(c.decisionNumber),
+          status: sanitizeCell(c.status),
+          amount: c.amount,         // numeric — not sanitized (not a string)
+          contribution: c.contribution, // numeric — not sanitized
+          contractor: sanitizeCell(c.contractor),
+          delegatedProjectOwner: sanitizeCell(delegated),
+          executionType: sanitizeCell(c.executionType),
+          programme: sanitizeCell(c.programme),
+          province: sanitizeCell(province),
+          partners: sanitizeCell(partners),
+          description: sanitizeCell(c.description),
+          validity: sanitizeCell(c.validity),
+          jurisdiction: sanitizeCell(c.jurisdiction),
         });
       });
 
@@ -419,7 +442,7 @@ export function createDocumentsRouter(): Router {
       await workbook.xlsx.write(res);
       res.end();
     } catch (error) {
-      console.error("Erreur export Excel:", error);
+      logger.error({ err: error }, "Erreur export Excel");
       res.status(500).json({ message: "Erreur lors de l'export Excel" });
     }
   });
